@@ -1,20 +1,25 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getStatsForProfile } from '@/lib/gameSessions'
+import { getStatsForProfile, ProfileStats } from '@/lib/gameSessions'
 import { Card } from '@/components/ui/Card'
 
 export default function ProfilePage() {
     const { currentProfile, clearProfile } = useProfile()
     const router = useRouter()
+    const [stats, setStats] = useState<ProfileStats | null>(null)
+
+    useEffect(() => {
+        if (!currentProfile) return
+        getStatsForProfile(currentProfile.id).then(setStats)
+    }, [currentProfile])
 
     if (!currentProfile) return null
 
-    const stats = getStatsForProfile(currentProfile.id)
-
-    const handleSwitch = () => {
-        clearProfile()
+    const handleSwitch = async () => {
+        await clearProfile()
         router.push('/')
     }
 
@@ -30,12 +35,12 @@ export default function ProfilePage() {
             <div className="flex gap-4">
                 <Card className="flex-1">
                     <p className="text-sm text-gray-500">Games played</p>
-                    <p className="text-2xl font-semibold">{stats.gamesPlayed}</p>
+                    <p className="text-2xl font-semibold">{stats ? stats.gamesPlayed : '--'}</p>
                 </Card>
                 <Card className="flex-1">
                     <p className="text-sm text-gray-500">Accuracy</p>
                     <p className="text-2xl font-semibold">
-                        {stats.accuracy === null ? '--' : `${stats.accuracy}%`}
+                        {stats?.accuracy == null ? '--' : `${stats.accuracy}%`}
                     </p>
                 </Card>
             </div>
@@ -43,7 +48,7 @@ export default function ProfilePage() {
             <Card>
                 <p className="text-sm text-gray-500">Correct answers</p>
                 <p className="text-2xl font-semibold">
-                    {stats.totalCorrect} / {stats.totalQuestions}
+                    {stats ? `${stats.totalCorrect} / ${stats.totalQuestions}` : '--'}
                 </p>
             </Card>
 

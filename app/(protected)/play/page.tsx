@@ -1,24 +1,45 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { usePlaySession } from '@/hooks/usePlaySession'
 import { getQuestionsForProfile } from '@/lib/questions'
 import { recordSession } from '@/lib/gameSessions'
+import { usePlaySession } from '@/hooks/usePlaySession'
 import { Card } from '@/components/ui/Card'
+import { Question } from '@/types'
 
 export default function PlayPage() {
     const { currentProfile } = useProfile()
-    const questions = currentProfile ? getQuestionsForProfile(currentProfile.id) : []
+    const [questions, setQuestions] = useState<Question[] | null>(null)
+
+    useEffect(() => {
+        if (!currentProfile) return
+        getQuestionsForProfile(currentProfile.id).then(setQuestions)
+    }, [currentProfile])
+
+    if (!currentProfile || questions === null) {
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <p className="text-sm text-gray-500">Loading...</p>
+            </div>
+        )
+    }
+
+    return <PlaySession profileId={currentProfile.id} questions={questions} />
+}
+
+function PlaySession({ profileId, questions }: { profileId: string; questions: Question[] }) {
     const { state, currentQuestion, score, submitAnswer, nextQuestion } = usePlaySession(questions)
     const hasRecorded = useRef(false)
 
     useEffect(() => {
-        if (state.status === 'finished' && !hasRecorded.current && currentProfile && questions.length > 0) {
-            recordSession(currentProfile.id, score, questions.length)
+        if (state.status === 'finished' && !hasRecorded.current && questions.length > 0) {
             hasRecorded.current = true
+            recordSession(profileId, score, questions.length).then(({ error }) => {
+                if (error) console.error('Failed to record session:', error)
+            })
         }
-    }, [state.status, currentProfile, score, questions.length])
+    }, [state.status, profileId, score, questions.length])
 
     if (questions.length === 0) {
         return (

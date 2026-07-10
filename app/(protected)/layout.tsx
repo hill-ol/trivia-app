@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/contexts/ProfileContext'
 
+export const dynamic = 'force-dynamic'
+
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
     const { currentProfile, isLoading } = useProfile()
     const router = useRouter()

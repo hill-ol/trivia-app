@@ -1,42 +1,79 @@
 'use client'
 
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { supabase } from '@/lib/supabase'
 import { Profile } from '@/types'
-import {createContext, useContext, useEffect, useState} from "react";
-import {mockProfiles} from "@/lib/mockData";
 
 interface ProfileContextValue {
     currentProfile: Profile | null
-    setCurrentProfile: (profile: Profile) => void
-    clearProfile: () => void
+    claimProfile: (name: string) => Promise<{ error: string | null }>
+    clearProfile: () => Promise<void>
     isLoading: boolean
 }
 
 const ProfileContext = createContext<ProfileContextValue | undefined>(undefined)
-const STORAGE_KEY = 'trivia-app-profile-id'
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-    const [currentProfile, setCurrentProfileState] = useState<Profile | null>(null)
+    const [currentProfile, setCurrentProfile] = useState<Profile | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    
+
     useEffect(() => {
-        const storeId = localStorage.getItem(STORAGE_KEY)
-        const found = mockProfiles.find((p) => p.id === storeId)
-        if (found) setCurrentProfileState(found)
-        setIsLoading(false)
+        async function loadProfile() {
+            const { data: sessionData } = await supabase.auth.getSession()
+            const userId = sessionData.session?.user.id
+
+            if (!userId) {
+                setIsLoading(false)
+                return
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle()
+
+            if (profile) {
+                setCurrentProfile({ id: profile.id, name: profile.name, avatarUrl: profile.avatar_url })
+            }
+            setIsLoading(false)
+        }
+
+        loadProfile()
     }, [])
-    
-    const setCurrentProfile = (profile: Profile) => {
-        localStorage.setItem(STORAGE_KEY, profile.id)
-        setCurrentProfileState(profile)
+
+    const claimProfile = async (name: string) => {
+        let userId = (await supabase.auth.getSession()).data.session?.user.id
+
+        if (!userId) {
+            const { data, error } = await supabase.auth.signInAnonymously()
+            if (error || !data.user) return { error: error?.message ?? 'Could not sign in' }
+            userId = data.user.id
+        }
+
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .insert({ id: userId, name })
+            .select()
+            .single()
+
+        if (error) {
+            const message =
+                error.code === '23505' ? 'That name is already claimed on another device' : error.message
+            return { error: message }
+        }
+
+        setCurrentProfile({ id: profile.id, name: profile.name, avatarUrl: profile.avatar_url })
+        return { error: null }
     }
-    
-    const clearProfile = () => {
-    localStorage.removeItem(STORAGE_KEY)
-    setCurrentProfileState(null)
+
+    const clearProfile = async () => {
+        await supabase.auth.signOut()
+        setCurrentProfile(null)
     }
-    
+
     return (
-        <ProfileContext.Provider value={{ currentProfile, setCurrentProfile, clearProfile, isLoading }}>
+        <ProfileContext.Provider value={{ currentProfile, claimProfile, clearProfile, isLoading }}>
             {children}
         </ProfileContext.Provider>
     )

@@ -1,36 +1,55 @@
+import { supabase } from '@/lib/supabase'
 import { GameSession, Profile } from '@/types'
 
-const STORAGE_KEY = 'trivia-app-game-sessions'
-
-function getAllSessions(): GameSession[] {
-    if (typeof window === 'undefined') return []
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
+interface GameSessionRow {
+    id: string
+    profile_id: string
+    score: number
+    total_questions: number
+    completed_at: string
 }
 
-export function recordSession(
+function toGameSession(row: GameSessionRow): GameSession {
+    return {
+        id: row.id,
+        profileId: row.profile_id,
+        score: row.score,
+        totalQuestions: row.total_questions,
+        completedAt: row.completed_at,
+    }
+}
+
+export async function recordSession(
     profileId: Profile['id'],
     score: number,
     totalQuestions: number
-): GameSession {
-    const session: GameSession = {
-        id: crypto.randomUUID(),
-        profileId,
+): Promise<{ error: string | null }> {
+    const { error } = await supabase.from('game_sessions').insert({
+        profile_id: profileId,
         score,
-        totalQuestions,
-        completedAt: new Date().toISOString(),
+        total_questions: totalQuestions,
+    })
+
+    if (error) {
+        console.error('Failed to record session:', error.message)
+        return { error: error.message }
     }
-    const sessions = getAllSessions()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...sessions, session]))
-    return session
+
+    return { error: null }
 }
 
-export function getSessionsForProfile(profileId: Profile['id']): GameSession[] {
-    return getAllSessions().filter((s) => s.profileId === profileId)
-}
+export async function getSessionsForProfile(profileId: Profile['id']): Promise<GameSession[]> {
+    const { data, error } = await supabase
+        .from('game_sessions')
+        .select('*')
+        .eq('profile_id', profileId)
 
-export function getTotalScoreForProfile(profileId: Profile['id']): number {
-    return getSessionsForProfile(profileId).reduce((sum, s) => sum + s.score, 0)
+    if (error) {
+        console.error('Failed to load sessions:', error.message)
+        return []
+    }
+
+    return (data as GameSessionRow[]).map(toGameSession)
 }
 
 export interface ProfileStats {
@@ -40,8 +59,8 @@ export interface ProfileStats {
     accuracy: number | null
 }
 
-export function getStatsForProfile(profileId: Profile['id']): ProfileStats {
-    const sessions = getSessionsForProfile(profileId)
+export async function getStatsForProfile(profileId: Profile['id']): Promise<ProfileStats> {
+    const sessions = await getSessionsForProfile(profileId)
     const totalCorrect = sessions.reduce((sum, s) => sum + s.score, 0)
     const totalQuestions = sessions.reduce((sum, s) => sum + s.totalQuestions, 0)
 

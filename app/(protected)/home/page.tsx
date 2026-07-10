@@ -1,16 +1,21 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getStatsForProfile } from '@/lib/gameSessions'
+import { getStatsForProfile, ProfileStats } from '@/lib/gameSessions'
 import { Card } from '@/components/ui/Card'
 
 export default function HomePage() {
     const { currentProfile } = useProfile()
+    const [stats, setStats] = useState<ProfileStats | null>(null)
+
+    useEffect(() => {
+        if (!currentProfile) return
+        getStatsForProfile(currentProfile.id).then(setStats)
+    }, [currentProfile])
 
     if (!currentProfile) return null
-
-    const stats = getStatsForProfile(currentProfile.id)
 
     return (
         <div className="flex min-h-screen flex-col gap-6 px-6 py-10">
@@ -22,12 +27,12 @@ export default function HomePage() {
             <div className="flex gap-4">
                 <Card className="flex-1">
                     <p className="text-sm text-gray-500">Games played</p>
-                    <p className="text-2xl font-semibold">{stats.gamesPlayed}</p>
+                    <p className="text-2xl font-semibold">{stats ? stats.gamesPlayed : '--'}</p>
                 </Card>
                 <Card className="flex-1">
                     <p className="text-sm text-gray-500">Accuracy</p>
                     <p className="text-2xl font-semibold">
-                        {stats.accuracy === null ? '--' : `${stats.accuracy}%`}
+                        {stats?.accuracy == null ? '--' : `${stats.accuracy}%`}
                     </p>
                 </Card>
             </div>

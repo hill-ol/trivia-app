@@ -1,28 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { mockProfiles } from '@/lib/mockData'
+import { getOtherProfile } from '@/lib/profiles'
 import { addQuestion } from '@/lib/questions'
 import { Card } from '@/components/ui/Card'
-import { Question } from '@/types'
-
-function getOtherProfile(currentId: string) {
-    return mockProfiles.find((p) => p.id !== currentId)
-}
+import { Profile, Question } from '@/types'
 
 const EMPTY_CHOICES = ['', '', '', '']
 
 export default function AddTriviaPage() {
     const { currentProfile } = useProfile()
+    const [otherProfile, setOtherProfile] = useState<Profile | undefined>(undefined)
     const [questionText, setQuestionText] = useState('')
     const [choices, setChoices] = useState<string[]>(EMPTY_CHOICES)
     const [correctIndex, setCorrectIndex] = useState<number | null>(null)
     const [category, setCategory] = useState('')
     const [difficulty, setDifficulty] = useState<Question['difficulty']>('easy')
     const [justAdded, setJustAdded] = useState(false)
+    const [submitError, setSubmitError] = useState<string | null>(null)
 
-    const otherProfile = currentProfile ? getOtherProfile(currentProfile.id) : undefined
+    useEffect(() => {
+        if (!currentProfile) return
+        getOtherProfile(currentProfile.id).then(setOtherProfile)
+    }, [currentProfile])
 
     const updateChoice = (index: number, value: string) => {
         setChoices((prev) => prev.map((c, i) => (i === index ? value : c)))
@@ -34,10 +35,12 @@ export default function AddTriviaPage() {
         correctIndex !== null &&
         category.trim().length > 0
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!isValid || !currentProfile || !otherProfile || correctIndex === null) return
 
-        addQuestion({
+        setSubmitError(null)
+
+        const { error } = await addQuestion({
             authorId: currentProfile.id,
             visibleToId: otherProfile.id,
             questionText: questionText.trim(),
@@ -46,6 +49,11 @@ export default function AddTriviaPage() {
             category: category.trim(),
             difficulty,
         })
+
+        if (error) {
+            setSubmitError(error)
+            return
+        }
 
         setQuestionText('')
         setChoices(EMPTY_CHOICES)
@@ -61,7 +69,7 @@ export default function AddTriviaPage() {
             <div>
                 <h1 className="text-2xl font-semibold">Add trivia</h1>
                 <p className="text-sm text-gray-500">
-                    Only {otherProfile?.name} will see this question.
+                    Only {otherProfile?.name ?? 'the other person'} will see this question.
                 </p>
             </div>
 
@@ -129,6 +137,8 @@ export default function AddTriviaPage() {
                     <option value="hard">Hard</option>
                 </select>
             </Card>
+
+            {submitError && <p className="text-sm text-red-500">{submitError}</p>}
 
             <button
                 onClick={handleSubmit}

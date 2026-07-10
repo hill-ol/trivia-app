@@ -3,7 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/contexts/ProfileContext'
-import { ProfilePicker } from '@components/ProfilePicker'
+import { ProfilePicker } from '@/components/ProfilePicker'
+
+export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const { currentProfile, isLoading } = useProfile()
