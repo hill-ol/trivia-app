@@ -2,7 +2,7 @@
 
 import { Profile } from '@/types'
 import {createContext, useContext, useEffect, useState} from "react";
-import {mockProfiles} from "@/types/lib/mockData";
+import {mockProfiles} from "@/lib/mockData";
 
 interface ProfileContextValue {
     currentProfile: Profile | null

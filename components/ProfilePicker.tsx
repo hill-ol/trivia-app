@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { mockProfiles } from '@/types/lib/mockData'
+import { mockProfiles } from '@/lib/mockData'
 import { useProfile } from '@/contexts/ProfileContext'
 import { Profile } from '@/types'
 
