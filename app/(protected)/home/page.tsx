@@ -1,55 +1,88 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { BarChart3, Target, Play, Plus, Trophy, User, Star } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getStatsForProfile, ProfileStats } from '@/lib/gameSessions'
-import { Card } from '@/components/ui/Card'
+import { getStatsForProfile } from '@/lib/gameSessions'
+import { useAsyncData } from '@/hooks/useAsyncData'
+import { FLOAT_TRANSITION } from '@/lib/motion'
+import { StatCard } from '@/components/ui/StatCard'
+import { NavRow } from '@/components/ui/NavRow'
+import { StaggerItem } from '@/components/ui/StaggerItem'
+import { ErrorNotice } from '@/components/ui/ErrorNotice'
+import { WobbleStar } from '@/components/ui/WobbleStar'
+import { Squiggle } from '@/components/ui/Squiggle'
 
 export default function HomePage() {
     const { currentProfile } = useProfile()
-    const [stats, setStats] = useState<ProfileStats | null>(null)
-
-    useEffect(() => {
-        if (!currentProfile) return
-        getStatsForProfile(currentProfile.id).then(setStats)
-    }, [currentProfile])
+    const { data: stats, error, isLoading, refetch } = useAsyncData(
+        () =>
+            currentProfile
+                ? getStatsForProfile(currentProfile.id)
+                : Promise.resolve({ data: null, error: null }),
+        [currentProfile?.id]
+    )
 
     if (!currentProfile) return null
 
     return (
-        <div className="flex min-h-screen flex-col gap-6 px-6 py-10">
-            <div>
-                <p className="text-sm text-gray-500">Welcome back</p>
-                <h1 className="text-2xl font-semibold">{currentProfile.name}</h1>
+        <div className="flex min-h-screen flex-col gap-6 px-4 py-8">
+            <div className="relative m-1 mb-1">
+                <motion.div
+                    className="absolute -right-2 -top-2 h-[68px] w-[68px] rounded-2xl bg-petal-plush"
+                    initial={{ rotate: 10 }}
+                    animate={{ rotate: 10, y: [0, -4, 0] }}
+                    transition={FLOAT_TRANSITION}
+                    aria-hidden="true"
+                />
+                <div className="relative rounded-2xl border border-wild-hillside/40 bg-white p-4">
+                    <div className="mb-1 flex items-center gap-1.5">
+                        <WobbleStar />
+                        <span className="text-xs text-ink-muted">Welcome back</span>
+                    </div>
+                    <h1 className="font-display text-3xl text-ink">{currentProfile.name}</h1>
+                    <Squiggle className="mt-1 text-marina" />
+                </div>
             </div>
 
-            <div className="flex gap-4">
-                <Card className="flex-1">
-                    <p className="text-sm text-gray-500">Games played</p>
-                    <p className="text-2xl font-semibold">{stats ? stats.gamesPlayed : '--'}</p>
-                </Card>
-                <Card className="flex-1">
-                    <p className="text-sm text-gray-500">Accuracy</p>
-                    <p className="text-2xl font-semibold">
-                        {stats?.accuracy == null ? '--' : `${stats.accuracy}%`}
-                    </p>
-                </Card>
-            </div>
+            {error ? (
+                <ErrorNotice message="Couldn't load your stats." onRetry={refetch} />
+            ) : (
+                <div className="grid grid-cols-2 gap-3">
+                    <StaggerItem index={0}>
+                        <StatCard
+                            icon={<BarChart3 className="h-3.5 w-3.5" />}
+                            label="Games played"
+                            value={isLoading || !stats ? '--' : stats.gamesPlayed}
+                            color="blue"
+                            sticker="marina"
+                        />
+                    </StaggerItem>
+                    <StaggerItem index={1}>
+                        <StatCard
+                            icon={<Target className="h-3.5 w-3.5" />}
+                            label="Accuracy"
+                            value={isLoading || !stats || stats.accuracy == null ? '--' : `${stats.accuracy}%`}
+                            color="lavender"
+                            sticker="petal-plush"
+                        />
+                    </StaggerItem>
+                </div>
+            )}
 
-            <nav className="flex flex-col gap-3">
-                <Link href="/play">
-                    <Card className="text-lg font-medium">Play</Card>
-                </Link>
-                <Link href="/add-trivia">
-                    <Card className="text-lg font-medium">Add trivia</Card>
-                </Link>
-                <Link href="/leaderboard">
-                    <Card className="text-lg font-medium">Leaderboard</Card>
-                </Link>
-                <Link href="/profile">
-                    <Card className="text-lg font-medium">Profile</Card>
-                </Link>
+            <nav className="flex flex-col gap-2.5">
+                <StaggerItem index={2}>
+                    <NavRow href="/play" icon={<Play className="h-5 w-5" />} label="Play" color="blue" />
+                </StaggerItem>
+                <StaggerItem index={3}>
+                    <NavRow href="/add-trivia" icon={<Plus className="h-5 w-5" />} label="Add trivia" color="lavender" />
+                </StaggerItem>
+                <StaggerItem index={4}>
+                    <NavRow href="/leaderboard" icon={<Trophy className="h-5 w-5" />} label="Leaderboard" color="green" />
+                </StaggerItem>
+                <StaggerItem index={5}>
+                    <NavRow href="/profile" icon={<User className="h-5 w-5" />} label="Profile" color="lavender" />
+                </StaggerItem>
             </nav>
         </div>
     )
