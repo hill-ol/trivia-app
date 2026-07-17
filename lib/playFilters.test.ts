@@ -10,7 +10,7 @@ function makeQuestion(overrides: Partial<Question>): Question {
         questionText: 'Q',
         choices: ['A', 'B'],
         correctAnswer: 'A',
-        difficulty: 'easy',
+        points: 100,
         category: { id: 'cat-1', name: 'First date', color: 'blue' },
         ...overrides,
     }

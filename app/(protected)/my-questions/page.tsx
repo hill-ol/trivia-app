@@ -7,7 +7,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
 import { getQuestionsByAuthor, deleteQuestion } from '@/lib/questions'
 import { useAsyncData } from '@/hooks/useAsyncData'
-import { difficultyChipColor } from '@/lib/difficulty'
+import { pointsChipColor } from '@/lib/points'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { BackButton } from '@/components/ui/BackButton'
@@ -68,7 +68,7 @@ export default function MyQuestionsPage() {
                                         <div className="flex flex-wrap items-center justify-between gap-2">
                                             <div className="flex gap-2">
                                                 <Chip color={question.category.color}>{question.category.name}</Chip>
-                                                <Chip color={difficultyChipColor(question.difficulty)}>{question.difficulty}</Chip>
+                                                <Chip color={pointsChipColor(question.points)}>{question.points}</Chip>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <Link

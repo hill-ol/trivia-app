@@ -9,7 +9,7 @@ import { recordSession } from '@/lib/gameSessions'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { usePlaySession } from '@/hooks/usePlaySession'
 import { filterQuestions, getEmptyStateMessage, PlayMode } from '@/lib/playFilters'
-import { difficultyChipColor } from '@/lib/difficulty'
+import { pointsChipColor } from '@/lib/points'
 import { CHOICE_TINTS } from '@/lib/choiceTints'
 import { Card } from '@/components/ui/Card'
 import { Chip, ChipButton } from '@/components/ui/Chip'
@@ -20,6 +20,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { ErrorNotice } from '@/components/ui/ErrorNotice'
 import { Question } from '@/types'
 import { cn } from '@/lib/utils'
+import {playCorrectChime} from "@/lib/sound";
 
 export default function PlayPage() {
     const { currentProfile } = useProfile()
@@ -148,6 +149,7 @@ export default function PlayPage() {
 
 function PlaySession({ profileId, questions, onExit }: { profileId: string; questions: Question[]; onExit: () => void }) {
     const handleAnswer = (question: Question, isCorrect: boolean) => {
+        if (isCorrect) playCorrectChime()
         recordAttempt(profileId, question.id, isCorrect).then(({ error }) => {
             if (error) console.error('Failed to record attempt:', error)
         })
@@ -209,7 +211,7 @@ function PlaySession({ profileId, questions, onExit }: { profileId: string; ques
                 {currentQuestion && (
                     <>
                         <Chip color={currentQuestion.category.color}>{currentQuestion.category.name}</Chip>
-                        <Chip color={difficultyChipColor(currentQuestion.difficulty)}>{currentQuestion.difficulty}</Chip>
+                        <Chip color={pointsChipColor(currentQuestion.points)}>{currentQuestion.points} pts</Chip>
                     </>
                 )}
             </div>
@@ -219,6 +221,7 @@ function PlaySession({ profileId, questions, onExit }: { profileId: string; ques
             <div className="flex flex-col gap-3">
                 {currentQuestion?.choices.map((choice, i) => {
                     const isCorrectChoice = choice === currentQuestion.correctAnswer
+                    const tint = CHOICE_TINTS[i % CHOICE_TINTS.length]
 
                     if (state.status === 'answered') {
                         const isSelected = state.selectedAnswer === choice
@@ -226,8 +229,10 @@ function PlaySession({ profileId, questions, onExit }: { profileId: string; ques
                             <Card
                                 key={choice}
                                 className={cn(
+                                    'transition-colors duration-200',
                                     isCorrectChoice && 'border-bowser-shell bg-bowser-shell/10 animate-pop',
-                                    !isCorrectChoice && isSelected && 'border-briar-rose bg-briar-rose/10 animate-pop'
+                                    !isCorrectChoice && isSelected && 'border-briar-rose bg-briar-rose/10 animate-pop',
+                                    !isCorrectChoice && !isSelected && `${tint} opacity-50`
                                 )}
                             >
                                 {choice}
@@ -239,7 +244,7 @@ function PlaySession({ profileId, questions, onExit }: { profileId: string; ques
                         <Card
                             key={choice}
                             onClick={() => submitAnswer(choice)}
-                            className={cn(CHOICE_TINTS[i % CHOICE_TINTS.length], 'cursor-pointer active:scale-[0.98] transition-transform')}
+                            className={cn(tint, 'cursor-pointer active:scale-[0.98] transition-transform')}
                         >
                             {choice}
                         </Card>

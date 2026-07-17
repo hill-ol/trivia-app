@@ -1,19 +1,36 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import {BarChart3, Target, History } from 'lucide-react'
+import { BarChart3, Target, History } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
 import { getStatsForProfile } from '@/lib/gameSessions'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { FLOAT_TRANSITION } from '@/lib/motion'
 import { Card } from '@/components/ui/Card'
+import { Chip } from '@/components/ui/Chip'
 import { StatCard } from '@/components/ui/StatCard'
 import { StaggerItem } from '@/components/ui/StaggerItem'
 import { BackButton } from '@/components/ui/BackButton'
 import { ErrorNotice } from '@/components/ui/ErrorNotice'
 import { WobbleStar } from '@/components/ui/WobbleStar'
 import { Squiggle } from '@/components/ui/Squiggle'
-import {NavRow} from "@/components/ui/NavRow";
+import { FlowerDoodle } from '@/components/ui/FlowerDoodle'
+import { NavRow } from '@/components/ui/NavRow'
+
+type TitleColor = 'blue' | 'lavender' | 'green' | 'rose'
+
+function getPlayfulTitle(stats: { gamesPlayed: number; accuracy: number | null } | null): {
+    label: string
+    color: TitleColor
+} {
+    if (!stats || stats.gamesPlayed === 0 || stats.accuracy === null) {
+        return { label: 'Trivia Newbie', color: 'blue' }
+    }
+    if (stats.accuracy >= 90) return { label: 'Certified Genius', color: 'green' }
+    if (stats.accuracy >= 75) return { label: 'Sharp Shooter', color: 'blue' }
+    if (stats.accuracy >= 50) return { label: 'Getting There', color: 'lavender' }
+    return { label: 'Wildcard Guesser', color: 'rose' }
+}
 
 export default function ProfilePage() {
     const { currentProfile } = useProfile()
@@ -23,6 +40,8 @@ export default function ProfilePage() {
     )
 
     if (!currentProfile) return null
+
+    const title = getPlayfulTitle(isLoading ? null : stats)
 
     return (
         <div className="flex min-h-screen flex-col gap-6 px-4 py-8">
@@ -36,6 +55,7 @@ export default function ProfilePage() {
                     transition={FLOAT_TRANSITION}
                     aria-hidden="true"
                 />
+                <FlowerDoodle className="absolute -bottom-3 -left-3 h-12 w-12 -rotate-[8deg] text-changeling/80" />
                 <div className="relative flex items-center gap-4 rounded-2xl border border-wild-hillside/40 bg-white p-4">
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-marina/10 text-xl font-medium text-marina">
                         {currentProfile.name.charAt(0)}
@@ -46,7 +66,12 @@ export default function ProfilePage() {
                             <span className="text-xs text-ink-muted">Your profile</span>
                         </div>
                         <h1 className="font-display text-2xl text-ink">{currentProfile.name}</h1>
-                        <Squiggle className="mt-1 text-wild-hillside" width={90} />
+                        <div className="mt-1 flex items-center gap-2">
+                            <Squiggle className="text-wild-hillside" width={70} />
+                            <Chip color={title.color} className="px-2 py-0.5 text-[10px]">
+                                {title.label}
+                            </Chip>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -77,12 +102,15 @@ export default function ProfilePage() {
                     </div>
 
                     <StaggerItem index={2}>
-                        <Card>
+                        <Card sticker="bowser-shell">
                             <p className="text-xs text-ink-muted">Correct answers</p>
                             <p className="text-2xl font-medium text-ink">
                                 {stats && stats.totalQuestions > 0 ? `${stats.totalCorrect} / ${stats.totalQuestions}` : '--'}
                             </p>
                         </Card>
+                    </StaggerItem>
+
+                    <StaggerItem index={3}>
                         <NavRow href="/history" icon={<History className="h-5 w-5" />} label="View history" color="lavender" />
                     </StaggerItem>
                 </>

@@ -12,7 +12,7 @@ export interface Question {
     choices: string[]
     correctAnswer: string
     category: Category
-    difficulty: 'easy' | 'medium' | 'hard'
+    points: 100 | 200 | 300 | 400 | 500
 }
 
 export interface GameSession {

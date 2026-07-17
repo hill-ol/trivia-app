@@ -10,8 +10,8 @@ export function filterQuestions(
 ): Question[] {
     return allQuestions.filter((q) => {
         if (categoryId && q.category.id !== categoryId) return false
-        if (mode === 'new' && answerIds.has(q.id)) return false
-        return true
+        return !(mode === 'new' && answerIds.has(q.id));
+
     })
 }
 

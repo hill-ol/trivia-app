@@ -4,18 +4,18 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X } from 'lucide-react'
 import { getAllCategories, createCategory } from '@/lib/categories'
-import { difficultyChipColor } from '@/lib/difficulty'
+import { pointsChipColor, POINT_VALUES, PointValue } from '@/lib/points'
 import { CHOICE_TINTS } from '@/lib/choiceTints'
+import { getMissingFieldMessage } from '@/lib/questionValidation'
+import { playCorrectChime } from '@/lib/sound'
 import { Card } from '@/components/ui/Card'
 import { ChipButton } from '@/components/ui/Chip'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Category, Question } from '@/types'
 import { cn } from '@/lib/utils'
-import {getMissingFieldMessage} from "@/lib/questionValidation";
 
 const MIN_CHOICES = 2
 const MAX_CHOICES = 4
-const DIFFICULTIES: Question['difficulty'][] = ['easy', 'medium', 'hard']
 
 interface ChoiceItem {
     id: string
@@ -31,7 +31,7 @@ export interface QuestionFormData {
     choices: string[]
     correctAnswer: string
     categoryId: string
-    difficulty: Question['difficulty']
+    points: PointValue
 }
 
 interface QuestionFormProps {
@@ -58,7 +58,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
         if (!initialQuestion) return null
         return choices.find((c) => c.text === initialQuestion.correctAnswer)?.id ?? null
     })
-    const [difficulty, setDifficulty] = useState<Question['difficulty']>(initialQuestion?.difficulty ?? 'easy')
+    const [points, setPoints] = useState<PointValue>(initialQuestion?.points ?? 100)
     const [justSubmitted, setJustSubmitted] = useState(false)
     const [submitError, setSubmitError] = useState<string | null>(null)
     const [showMissingFieldTooltip, setShowMissingFieldTooltip] = useState(false)
@@ -123,7 +123,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
             choices: choices.map((c) => c.text.trim()),
             correctAnswer: correctChoice.text.trim(),
             categoryId: selectedCategoryId,
-            difficulty,
+            points,
         })
 
         if (error) {
@@ -131,6 +131,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
             return
         }
 
+        playCorrectChime()
         setJustSubmitted(true)
         setTimeout(() => setJustSubmitted(false), 1200)
         onSuccess?.()
@@ -140,7 +141,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
             setChoices([makeChoice(), makeChoice(), makeChoice(), makeChoice()])
             setCorrectId(null)
             setSelectedCategoryId(null)
-            setDifficulty('easy')
+            setPoints(100)
         }
     }
 
@@ -256,16 +257,11 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
             </Card>
 
             <Card className="flex flex-col gap-3">
-                <label className="text-xs text-ink-muted">Difficulty</label>
+                <label className="text-xs text-ink-muted">Points</label>
                 <div className="flex gap-2">
-                    {DIFFICULTIES.map((level) => (
-                        <ChipButton
-                            key={level}
-                            color={difficultyChipColor(level)}
-                            selected={difficulty === level}
-                            onClick={() => setDifficulty(level)}
-                        >
-                            {level}
+                    {POINT_VALUES.map((value) => (
+                        <ChipButton key={value} color={pointsChipColor(value)} selected={points === value} onClick={() => setPoints(value)}>
+                            {value}
                         </ChipButton>
                     ))}
                 </div>

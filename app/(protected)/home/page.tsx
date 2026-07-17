@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { BarChart3, Target, Play, Plus, Trophy, User, Star } from 'lucide-react'
+import {BarChart3, Target, Play, Plus, Trophy, User, Grid3x3} from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
 import { getStatsForProfile } from '@/lib/gameSessions'
 import { useAsyncData } from '@/hooks/useAsyncData'
@@ -82,6 +82,9 @@ export default function HomePage() {
                 </StaggerItem>
                 <StaggerItem index={5}>
                     <NavRow href="/profile" icon={<User className="h-5 w-5" />} label="Profile" color="lavender" />
+                </StaggerItem>
+                <StaggerItem index={6}>
+                    <NavRow href="/board" icon={<Grid3x3 className="h-5 w-5" />} label="Board" color="green" />
                 </StaggerItem>
             </nav>
         </div>

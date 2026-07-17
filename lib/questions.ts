@@ -9,7 +9,7 @@ interface QuestionRow {
     question_text: string
     choices: string[]
     correct_answer: string
-    difficulty: Question['difficulty']
+    points: Question['points']
     category: { id: string; name: string; color: Question['category']['color'] } | null
 }
 
@@ -21,7 +21,7 @@ function toQuestion(row: QuestionRow): Question {
         questionText: row.question_text,
         choices: row.choices,
         correctAnswer: row.correct_answer,
-        difficulty: row.difficulty,
+        points: row.points,
         category: row.category as Question['category'],
     }
 }
@@ -82,7 +82,7 @@ export async function addQuestion(
         choices: question.choices,
         correct_answer: question.correctAnswer,
         category_id: question.categoryId,
-        difficulty: question.difficulty,
+        points: question.points,
     })
     if (error) {
         console.error('Failed to add question:', error.message)
@@ -102,7 +102,7 @@ export async function updateQuestion(
             choices: question.choices,
             correct_answer: question.correctAnswer,
             category_id: question.categoryId,
-            difficulty: question.difficulty,
+            points: question.points,
         })
         .eq('id', id)
     if (error) {
