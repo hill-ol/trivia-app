@@ -1,0 +1,1 @@
+export const FLOAT_TRANSITION = { duration : 3, repeat: Infinity, ease: 'easeInOut' } as const
