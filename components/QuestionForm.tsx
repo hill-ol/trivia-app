@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X } from 'lucide-react'
+import {ChevronRight, Plus, X} from 'lucide-react'
 import { getAllCategories, createCategory } from '@/lib/categories'
 import { pointsChipColor, POINT_VALUES, PointValue } from '@/lib/points'
 import { CHOICE_TINTS } from '@/lib/choiceTints'
@@ -13,6 +13,7 @@ import { ChipButton } from '@/components/ui/Chip'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Category, Question } from '@/types'
 import { cn } from '@/lib/utils'
+import Link from "next/link";
 
 const MIN_CHOICES = 2
 const MAX_CHOICES = 4
@@ -226,7 +227,13 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
             </div>
 
             <Card className="flex flex-col gap-3">
-                <label className="text-xs text-ink-muted">Category</label>
+                <div className="flex items-center justify-between">
+                    <label className="text-xs text-ink-muted">Category</label>
+                    <Link href="/categories" className="flex items-center gap-0.5 text-xs font-medium text-marina">
+                        Manage
+                    </Link>
+                    <ChevronRight className="h-3 w-3" aria-hidden="true" />
+                </div>
                 <div className="flex flex-wrap gap-2">
                     {categories.map((cat) => (
                         <ChipButton
@@ -258,7 +265,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
 
             <Card className="flex flex-col gap-3">
                 <label className="text-xs text-ink-muted">Points</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                     {POINT_VALUES.map((value) => (
                         <ChipButton key={value} color={pointsChipColor(value)} selected={points === value} onClick={() => setPoints(value)}>
                             {value}
