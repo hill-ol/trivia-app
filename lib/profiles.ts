@@ -11,16 +11,19 @@ function toProfile(row: ProfileRow): Profile {
     return { id: row.id, name: row.name, avatarUrl: row.avatar_url ?? undefined }
 }
 
-export async function getAllProfiles(): Promise<Profile[]> {
+export async function getAllProfiles(): Promise<{ data: Profile[]; error: string | null }> {
     const { data, error } = await supabase.from('profiles').select('*')
     if (error) {
         console.error('Failed to load profiles:', error.message)
-        return []
+        return { data: [], error: error.message }
     }
-    return (data as ProfileRow[]).map(toProfile)
+    return { data: (data as ProfileRow[]).map(toProfile), error: null }
 }
 
-export async function getOtherProfile(currentId: Profile['id']): Promise<Profile | undefined> {
-    const profiles = await getAllProfiles()
-    return profiles.find((p) => p.id !== currentId)
+export async function getOtherProfile(
+    currentId: Profile['id']
+): Promise<{ data: Profile | undefined; error: string | null }> {
+    const { data: profiles, error } = await getAllProfiles()
+    if (error) return { data: undefined, error }
+    return { data: profiles.find((p) => p.id !== currentId), error: null }
 }

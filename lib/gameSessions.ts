@@ -29,27 +29,22 @@ export async function recordSession(
         score,
         total_questions: totalQuestions,
     })
-
     if (error) {
         console.error('Failed to record session:', error.message)
         return { error: error.message }
     }
-
     return { error: null }
 }
 
-export async function getSessionsForProfile(profileId: Profile['id']): Promise<GameSession[]> {
-    const { data, error } = await supabase
-        .from('game_sessions')
-        .select('*')
-        .eq('profile_id', profileId)
-
+export async function getSessionsForProfile(
+    profileId: Profile['id']
+): Promise<{ data: GameSession[]; error: string | null }> {
+    const { data, error } = await supabase.from('game_sessions').select('*').eq('profile_id', profileId)
     if (error) {
         console.error('Failed to load sessions:', error.message)
-        return []
+        return { data: [], error: error.message }
     }
-
-    return (data as GameSessionRow[]).map(toGameSession)
+    return { data: (data as GameSessionRow[]).map(toGameSession), error: null }
 }
 
 export interface ProfileStats {
@@ -59,15 +54,20 @@ export interface ProfileStats {
     accuracy: number | null
 }
 
-export async function getStatsForProfile(profileId: Profile['id']): Promise<ProfileStats> {
-    const sessions = await getSessionsForProfile(profileId)
+export async function getStatsForProfile(
+    profileId: Profile['id']
+): Promise<{ data: ProfileStats; error: string | null }> {
+    const { data: sessions, error } = await getSessionsForProfile(profileId)
     const totalCorrect = sessions.reduce((sum, s) => sum + s.score, 0)
     const totalQuestions = sessions.reduce((sum, s) => sum + s.totalQuestions, 0)
 
     return {
-        gamesPlayed: sessions.length,
-        totalCorrect,
-        totalQuestions,
-        accuracy: totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null,
+        data: {
+            gamesPlayed: sessions.length,
+            totalCorrect,
+            totalQuestions,
+            accuracy: totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null,
+        },
+        error,
     }
 }

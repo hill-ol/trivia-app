@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState } from 'react'
 import { Question } from '@/types'
 
 type PlayState =
@@ -16,7 +16,10 @@ interface UsePlaySessionResult {
     nextQuestion: () => void
 }
 
-export function usePlaySession(questions: Question[]): UsePlaySessionResult {
+export function usePlaySession(
+    questions: Question[],
+    onAnswer?: (question: Question, isCorrect: boolean) => void
+): UsePlaySessionResult {
     const [state, setState] = useState<PlayState>(
         questions.length > 0 ? { status: 'answering', questionIndex: 0 } : { status: 'finished' }
     )
@@ -30,6 +33,7 @@ export function usePlaySession(questions: Question[]): UsePlaySessionResult {
         const isCorrect = answer === currentQuestion.correctAnswer
         if (isCorrect) setScore((s) => s + 1)
         setState({ status: 'answered', questionIndex: state.questionIndex, selectedAnswer: answer, isCorrect })
+        onAnswer?.(currentQuestion, isCorrect)
     }
 
     const nextQuestion = () => {

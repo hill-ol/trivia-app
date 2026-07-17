@@ -11,7 +11,7 @@ export interface Question {
     questionText: string
     choices: string[]
     correctAnswer: string
-    category: string
+    category: Category
     difficulty: 'easy' | 'medium' | 'hard'
 }
 
@@ -21,4 +21,10 @@ export interface GameSession {
     score: number
     totalQuestions: number
     completedAt: string
+}
+
+export interface Category {
+    id: string
+    name: string
+    color: 'blue' | 'lavender' | 'green' | 'rose'
 }

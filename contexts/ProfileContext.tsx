@@ -7,7 +7,6 @@ import { Profile } from '@/types'
 interface ProfileContextValue {
     currentProfile: Profile | null
     claimProfile: (name: string) => Promise<{ error: string | null }>
-    clearProfile: () => Promise<void>
     isLoading: boolean
 }
 
@@ -51,6 +50,22 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             userId = data.user.id
         }
 
+        const { data: existing } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle()
+
+        if (existing) {
+            if (existing.name !== name) {
+                return {
+                    error: `This device is already set up as ${existing.name}. Use ${name}'s own device to play as them.`,
+                }
+            }
+            setCurrentProfile({ id: existing.id, name: existing.name, avatarUrl: existing.avatar_url })
+            return { error: null }
+        }
+
         const { data: profile, error } = await supabase
             .from('profiles')
             .insert({ id: userId, name })
@@ -67,13 +82,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         return { error: null }
     }
 
-    const clearProfile = async () => {
-        await supabase.auth.signOut()
-        setCurrentProfile(null)
-    }
-
     return (
-        <ProfileContext.Provider value={{ currentProfile, claimProfile, clearProfile, isLoading }}>
+        <ProfileContext.Provider value={{ currentProfile, claimProfile, isLoading }}>
             {children}
         </ProfileContext.Provider>
     )
