@@ -22,13 +22,13 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-    title: 'Us Trivia',
+    title: 'H+O Trivia',
     description: 'A trivia app for two',
     manifest: '/manifest.json',
     appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: 'Us Trivia',
+        title: 'H+O Trivia',
     },
     icons: {
         icon: '/icon-192.png',

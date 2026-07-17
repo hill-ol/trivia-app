@@ -1,10 +1,10 @@
 {
-  "name": "Us Trivia",
-  "short_name": "Us Trivia",
+  "name": "H+O Trivia",
+  "short_name": "H+O Trivia",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffe7ff",
-  "theme_color": "#f4adcf",
+  "theme_color": "#578BC8",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
