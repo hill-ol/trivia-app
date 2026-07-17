@@ -30,7 +30,7 @@ export default function AddTriviaPage() {
             choices: data.choices,
             correctAnswer: data.correctAnswer,
             categoryId: data.categoryId,
-            difficulty: data.difficulty,
+            points: data.points,
         })
     }
 

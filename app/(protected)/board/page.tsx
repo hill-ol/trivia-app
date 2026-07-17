@@ -123,7 +123,7 @@ export default function BoardPage() {
                                         <div className="mx-auto flex w-fit gap-1.5 rounded-2xl border border-wild-hillside/50 bg-wild-hillside/10 p-2">
                                             {board.map((column, columnIndex) => (
                                                 <StaggerItem key={column.category.id} index={columnIndex}>
-                                                    <div className="flex w-[104px] flex-col gap-1">
+                                                    <div className="flex w-[104px] flex-col gap-2.5">
                                                         <div
                                                             className={cn(
                                                                 'flex h-12 items-center justify-center rounded-lg px-1 text-center text-xs font-semibold leading-tight',
