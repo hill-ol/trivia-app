@@ -1,78 +1,223 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Star } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getQuestionsForProfile } from '@/lib/questions'
+import { getPlayData } from '@/lib/questions'
+import { recordAttempt } from '@/lib/questionAttempts'
 import { recordSession } from '@/lib/gameSessions'
+import { useAsyncData } from '@/hooks/useAsyncData'
 import { usePlaySession } from '@/hooks/usePlaySession'
+import { filterQuestions, getEmptyStateMessage, PlayMode } from '@/lib/playFilters'
+import { difficultyChipColor } from '@/lib/difficulty'
+import { CHOICE_TINTS } from '@/lib/choiceTints'
 import { Card } from '@/components/ui/Card'
+import { Chip, ChipButton } from '@/components/ui/Chip'
+import { BackButton } from '@/components/ui/BackButton'
+import { CountUp } from '@/components/ui/CountUp'
+import { Celebration } from '@/components/ui/Celebration'
+import { Tooltip } from '@/components/ui/Tooltip'
+import { ErrorNotice } from '@/components/ui/ErrorNotice'
 import { Question } from '@/types'
+import { cn } from '@/lib/utils'
 
 export default function PlayPage() {
     const { currentProfile } = useProfile()
-    const [questions, setQuestions] = useState<Question[] | null>(null)
+    const { data: playData, error, isLoading, refetch } = useAsyncData(
+        () =>
+            currentProfile
+                ? getPlayData(currentProfile.id)
+                : Promise.resolve({ data: { questions: [], answeredIds: new Set<string>() }, error: null }),
+        [currentProfile?.id]
+    )
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+    const [mode, setMode] = useState<PlayMode>('new')
+    const [showEmptyTooltip, setShowEmptyTooltip] = useState(false)
+    const [activeQuestions, setActiveQuestions] = useState<Question[] | null>(null)
 
-    useEffect(() => {
-        if (!currentProfile) return
-        getQuestionsForProfile(currentProfile.id).then(setQuestions)
-    }, [currentProfile])
+    if (activeQuestions) {
+        return <PlaySession profileId={currentProfile!.id} questions={activeQuestions} onExit={() => setActiveQuestions(null)} />
+    }
 
-    if (!currentProfile || questions === null) {
+    if (!currentProfile || isLoading || !playData) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
-                <p className="text-sm text-gray-500">Loading...</p>
+            <div className="flex min-h-screen flex-col gap-6 px-4 py-6">
+                <BackButton />
+                <div className="flex flex-1 items-center justify-center">
+                    <p className="text-sm text-ink-muted">Loading...</p>
+                </div>
             </div>
         )
     }
 
-    return <PlaySession profileId={currentProfile.id} questions={questions} />
+    if (error) {
+        return (
+            <div className="flex min-h-screen flex-col gap-6 px-4 py-8">
+                <BackButton />
+                <ErrorNotice message="Couldn't load your questions." onRetry={refetch} />
+            </div>
+        )
+    }
+
+    const { questions: allQuestions, answeredIds } = playData
+
+    if (allQuestions.length === 0) {
+        return (
+            <div className="flex min-h-screen flex-col gap-6 px-4 py-8">
+                <div className="flex items-center gap-3">
+                    <BackButton />
+                    <h1 className="font-display text-2xl text-ink">Play</h1>
+                </div>
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+                    <p className="text-lg font-medium text-ink">No questions yet</p>
+                    <p className="text-sm text-ink-muted">Once questions are added for you, they&apos;ll show up here.</p>
+                </div>
+            </div>
+        )
+    }
+
+    const categories = Array.from(new Map(allQuestions.map((q) => [q.category.id, q.category])).values())
+    const matchingQuestions = filterQuestions(allQuestions, answeredIds, selectedCategoryId, mode)
+
+    const handleStart = () => {
+        if (matchingQuestions.length === 0) {
+            setShowEmptyTooltip(true)
+            setTimeout(() => setShowEmptyTooltip(false), 2000)
+            return
+        }
+        setActiveQuestions(matchingQuestions)
+    }
+
+    return (
+        <div className="flex min-h-screen flex-col gap-6 px-4 py-8">
+            <div className="flex items-center gap-3">
+                <BackButton />
+                <h1 className="font-display text-2xl text-ink">Play</h1>
+            </div>
+
+            <Card className="flex flex-col gap-3">
+                <label className="text-xs text-ink-muted">Category</label>
+                <div className="flex flex-wrap gap-2">
+                    <ChipButton color="blue" selected={selectedCategoryId === null} onClick={() => setSelectedCategoryId(null)}>
+                        All categories ({filterQuestions(allQuestions, answeredIds, null, mode).length})
+                    </ChipButton>
+                    {categories.map((cat) => (
+                        <ChipButton
+                            key={cat.id}
+                            color={cat.color}
+                            selected={selectedCategoryId === cat.id}
+                            onClick={() => setSelectedCategoryId(cat.id)}
+                        >
+                            {cat.name} ({filterQuestions(allQuestions, answeredIds, cat.id, mode).length})
+                        </ChipButton>
+                    ))}
+                </div>
+            </Card>
+
+            <Card className="flex flex-col gap-3">
+                <label className="text-xs text-ink-muted">What to play</label>
+                <div className="flex gap-2">
+                    <ChipButton color="blue" selected={mode === 'new'} onClick={() => setMode('new')}>
+                        New questions
+                    </ChipButton>
+                    <ChipButton color="lavender" selected={mode === 'repeat'} onClick={() => setMode('repeat')}>
+                        Play again
+                    </ChipButton>
+                </div>
+            </Card>
+
+            <div className="relative mt-2">
+                <button
+                    onClick={handleStart}
+                    className={cn(
+                        'w-full cursor-pointer rounded-2xl p-4 text-lg font-medium transition-all active:scale-[0.98]',
+                        matchingQuestions.length > 0 ? 'bg-marina text-white' : 'bg-wild-hillside/40 text-ink-muted'
+                    )}
+                >
+                    {matchingQuestions.length > 0 ? `Start playing (${matchingQuestions.length})` : 'Start playing'}
+                </button>
+                <Tooltip
+                    show={showEmptyTooltip}
+                    message={getEmptyStateMessage(allQuestions, selectedCategoryId, mode)}
+                    className="bottom-full left-1/2 mb-2 -translate-x-1/2"
+                />
+            </div>
+        </div>
+    )
 }
 
-function PlaySession({ profileId, questions }: { profileId: string; questions: Question[] }) {
-    const { state, currentQuestion, score, submitAnswer, nextQuestion } = usePlaySession(questions)
-    const hasRecorded = useRef(false)
+function PlaySession({ profileId, questions, onExit }: { profileId: string; questions: Question[]; onExit: () => void }) {
+    const handleAnswer = (question: Question, isCorrect: boolean) => {
+        recordAttempt(profileId, question.id, isCorrect).then(({ error }) => {
+            if (error) console.error('Failed to record attempt:', error)
+        })
+    }
+
+    const { state, currentQuestion, score, submitAnswer, nextQuestion } = usePlaySession(questions, handleAnswer)
+    const hasRecordedSession = useRef(false)
 
     useEffect(() => {
-        if (state.status === 'finished' && !hasRecorded.current && questions.length > 0) {
-            hasRecorded.current = true
+        if (state.status === 'finished' && !hasRecordedSession.current && questions.length > 0) {
+            hasRecordedSession.current = true
             recordSession(profileId, score, questions.length).then(({ error }) => {
                 if (error) console.error('Failed to record session:', error)
             })
         }
     }, [state.status, profileId, score, questions.length])
 
-    if (questions.length === 0) {
+    if (state.status === 'finished') {
+        const isGreatScore = questions.length > 0 && score / questions.length >= 0.8
+
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-6 text-center">
-                <p className="text-lg font-medium">No questions yet</p>
-                <p className="text-sm text-gray-500">
-                    Once questions are added for you, they&apos;ll show up here.
-                </p>
+            <div className="flex min-h-screen flex-col gap-6 px-4 py-6">
+                <BackButton />
+                <div className="relative flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+                    {isGreatScore && <Celebration />}
+                    <p className="text-sm text-ink-muted">You&apos;re done</p>
+                    <p className="font-display text-4xl text-ink">
+                        <CountUp value={score} /> / {questions.length}
+                    </p>
+                    <button
+                        onClick={onExit}
+                        className="mt-4 cursor-pointer rounded-2xl bg-marina px-6 py-3 text-sm font-medium text-white active:scale-[0.98]"
+                    >
+                        Play something else
+                    </button>
+                </div>
             </div>
         )
     }
 
-    if (state.status === 'finished') {
-        return (
-            <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-6 text-center">
-                <p className="text-sm text-gray-500">You&apos;re done</p>
-                <p className="text-3xl font-semibold">
-                    {score} / {questions.length}
-                </p>
-            </div>
-        )
-    }
+    const currentIndex = state.questionIndex
 
     return (
-        <div className="flex min-h-screen flex-col gap-6 px-6 py-10">
-            <p className="text-sm text-gray-500">
-                Question {state.questionIndex + 1} of {questions.length}
-            </p>
+        <div className="flex min-h-screen flex-col gap-5 px-4 py-6">
+            <BackButton />
 
-            <Card className="text-lg font-medium">{currentQuestion?.questionText}</Card>
+            <div className="flex justify-center gap-1.5">
+                {questions.map((_, i) => (
+                    <Star
+                        key={i}
+                        className={i <= currentIndex ? 'h-4 w-4 text-changeling' : 'h-4 w-4 text-wild-hillside'}
+                        fill={i <= currentIndex ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                    />
+                ))}
+            </div>
+
+            <div className="flex gap-2">
+                {currentQuestion && (
+                    <>
+                        <Chip color={currentQuestion.category.color}>{currentQuestion.category.name}</Chip>
+                        <Chip color={difficultyChipColor(currentQuestion.difficulty)}>{currentQuestion.difficulty}</Chip>
+                    </>
+                )}
+            </div>
+
+            <Card className="text-lg font-medium text-ink">{currentQuestion?.questionText}</Card>
 
             <div className="flex flex-col gap-3">
-                {currentQuestion?.choices.map((choice) => {
+                {currentQuestion?.choices.map((choice, i) => {
                     const isCorrectChoice = choice === currentQuestion.correctAnswer
 
                     if (state.status === 'answered') {
@@ -80,13 +225,10 @@ function PlaySession({ profileId, questions }: { profileId: string; questions: Q
                         return (
                             <Card
                                 key={choice}
-                                className={
-                                    isCorrectChoice
-                                        ? 'border-green-500 bg-green-50'
-                                        : isSelected
-                                            ? 'border-red-500 bg-red-50'
-                                            : ''
-                                }
+                                className={cn(
+                                    isCorrectChoice && 'border-bowser-shell bg-bowser-shell/10 animate-pop',
+                                    !isCorrectChoice && isSelected && 'border-briar-rose bg-briar-rose/10 animate-pop'
+                                )}
                             >
                                 {choice}
                             </Card>
@@ -97,7 +239,7 @@ function PlaySession({ profileId, questions }: { profileId: string; questions: Q
                         <Card
                             key={choice}
                             onClick={() => submitAnswer(choice)}
-                            className="active:scale-[0.98] transition-transform"
+                            className={cn(CHOICE_TINTS[i % CHOICE_TINTS.length], 'cursor-pointer active:scale-[0.98] transition-transform')}
                         >
                             {choice}
                         </Card>
@@ -108,7 +250,7 @@ function PlaySession({ profileId, questions }: { profileId: string; questions: Q
             {state.status === 'answered' && (
                 <button
                     onClick={nextQuestion}
-                    className="rounded-2xl bg-gray-900 p-4 text-lg font-medium text-white"
+                    className="cursor-pointer rounded-2xl bg-marina p-4 text-lg font-medium text-white active:scale-[0.98] transition-transform"
                 >
                     Next
                 </button>

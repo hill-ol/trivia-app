@@ -1,63 +1,92 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
+import {BarChart3, Target, History } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getStatsForProfile, ProfileStats } from '@/lib/gameSessions'
+import { getStatsForProfile } from '@/lib/gameSessions'
+import { useAsyncData } from '@/hooks/useAsyncData'
+import { FLOAT_TRANSITION } from '@/lib/motion'
 import { Card } from '@/components/ui/Card'
+import { StatCard } from '@/components/ui/StatCard'
+import { StaggerItem } from '@/components/ui/StaggerItem'
+import { BackButton } from '@/components/ui/BackButton'
+import { ErrorNotice } from '@/components/ui/ErrorNotice'
+import { WobbleStar } from '@/components/ui/WobbleStar'
+import { Squiggle } from '@/components/ui/Squiggle'
+import {NavRow} from "@/components/ui/NavRow";
 
 export default function ProfilePage() {
-    const { currentProfile, clearProfile } = useProfile()
-    const router = useRouter()
-    const [stats, setStats] = useState<ProfileStats | null>(null)
-
-    useEffect(() => {
-        if (!currentProfile) return
-        getStatsForProfile(currentProfile.id).then(setStats)
-    }, [currentProfile])
+    const { currentProfile } = useProfile()
+    const { data: stats, error, isLoading, refetch } = useAsyncData(
+        () => (currentProfile ? getStatsForProfile(currentProfile.id) : Promise.resolve({ data: null, error: null })),
+        [currentProfile?.id]
+    )
 
     if (!currentProfile) return null
 
-    const handleSwitch = async () => {
-        await clearProfile()
-        router.push('/')
-    }
-
     return (
-        <div className="flex min-h-screen flex-col gap-6 px-6 py-10">
-            <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-xl font-medium">
-                    {currentProfile.name.charAt(0)}
+        <div className="flex min-h-screen flex-col gap-6 px-4 py-8">
+            <BackButton />
+
+            <div className="relative m-1 mb-1">
+                <motion.div
+                    className="absolute -right-2 -top-2 h-[68px] w-[68px] rounded-2xl bg-petal-plush"
+                    initial={{ rotate: 10 }}
+                    animate={{ rotate: 10, y: [0, -4, 0] }}
+                    transition={FLOAT_TRANSITION}
+                    aria-hidden="true"
+                />
+                <div className="relative flex items-center gap-4 rounded-2xl border border-wild-hillside/40 bg-white p-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-marina/10 text-xl font-medium text-marina">
+                        {currentProfile.name.charAt(0)}
+                    </div>
+                    <div>
+                        <div className="mb-0.5 flex items-center gap-1.5">
+                            <WobbleStar className="h-3 w-3 text-changeling" />
+                            <span className="text-xs text-ink-muted">Your profile</span>
+                        </div>
+                        <h1 className="font-display text-2xl text-ink">{currentProfile.name}</h1>
+                        <Squiggle className="mt-1 text-wild-hillside" width={90} />
+                    </div>
                 </div>
-                <h1 className="text-2xl font-semibold">{currentProfile.name}</h1>
             </div>
 
-            <div className="flex gap-4">
-                <Card className="flex-1">
-                    <p className="text-sm text-gray-500">Games played</p>
-                    <p className="text-2xl font-semibold">{stats ? stats.gamesPlayed : '--'}</p>
-                </Card>
-                <Card className="flex-1">
-                    <p className="text-sm text-gray-500">Accuracy</p>
-                    <p className="text-2xl font-semibold">
-                        {stats?.accuracy == null ? '--' : `${stats.accuracy}%`}
-                    </p>
-                </Card>
-            </div>
+            {error ? (
+                <ErrorNotice message="Couldn't load your stats." onRetry={refetch} />
+            ) : (
+                <>
+                    <div className="grid grid-cols-2 gap-3">
+                        <StaggerItem index={0}>
+                            <StatCard
+                                icon={<BarChart3 className="h-3.5 w-3.5" />}
+                                label="Games played"
+                                value={isLoading || !stats ? '--' : stats.gamesPlayed}
+                                color="blue"
+                                sticker="marina"
+                            />
+                        </StaggerItem>
+                        <StaggerItem index={1}>
+                            <StatCard
+                                icon={<Target className="h-3.5 w-3.5" />}
+                                label="Accuracy"
+                                value={isLoading || !stats || stats.accuracy == null ? '--' : `${stats.accuracy}%`}
+                                color="lavender"
+                                sticker="petal-plush"
+                            />
+                        </StaggerItem>
+                    </div>
 
-            <Card>
-                <p className="text-sm text-gray-500">Correct answers</p>
-                <p className="text-2xl font-semibold">
-                    {stats ? `${stats.totalCorrect} / ${stats.totalQuestions}` : '--'}
-                </p>
-            </Card>
-
-            <button
-                onClick={handleSwitch}
-                className="mt-auto rounded-2xl border border-gray-200 p-4 text-lg font-medium text-gray-500"
-            >
-                Switch profile
-            </button>
+                    <StaggerItem index={2}>
+                        <Card>
+                            <p className="text-xs text-ink-muted">Correct answers</p>
+                            <p className="text-2xl font-medium text-ink">
+                                {stats && stats.totalQuestions > 0 ? `${stats.totalCorrect} / ${stats.totalQuestions}` : '--'}
+                            </p>
+                        </Card>
+                        <NavRow href="/history" icon={<History className="h-5 w-5" />} label="View history" color="lavender" />
+                    </StaggerItem>
+                </>
+            )}
         </div>
     )
 }

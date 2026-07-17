@@ -1,152 +1,57 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
 import { getOtherProfile } from '@/lib/profiles'
 import { addQuestion } from '@/lib/questions'
-import { Card } from '@/components/ui/Card'
-import { Profile, Question } from '@/types'
-
-const EMPTY_CHOICES = ['', '', '', '']
+import { QuestionForm, QuestionFormData } from '@/components/QuestionForm'
+import { BackButton } from '@/components/ui/BackButton'
+import { Profile } from '@/types'
 
 export default function AddTriviaPage() {
     const { currentProfile } = useProfile()
     const [otherProfile, setOtherProfile] = useState<Profile | undefined>(undefined)
-    const [questionText, setQuestionText] = useState('')
-    const [choices, setChoices] = useState<string[]>(EMPTY_CHOICES)
-    const [correctIndex, setCorrectIndex] = useState<number | null>(null)
-    const [category, setCategory] = useState('')
-    const [difficulty, setDifficulty] = useState<Question['difficulty']>('easy')
-    const [justAdded, setJustAdded] = useState(false)
-    const [submitError, setSubmitError] = useState<string | null>(null)
 
     useEffect(() => {
         if (!currentProfile) return
-        getOtherProfile(currentProfile.id).then(setOtherProfile)
+        getOtherProfile(currentProfile.id).then(({ data }) => setOtherProfile(data))
     }, [currentProfile])
 
-    const updateChoice = (index: number, value: string) => {
-        setChoices((prev) => prev.map((c, i) => (i === index ? value : c)))
-    }
-
-    const isValid =
-        questionText.trim().length > 0 &&
-        choices.every((c) => c.trim().length > 0) &&
-        correctIndex !== null &&
-        category.trim().length > 0
-
-    const handleSubmit = async () => {
-        if (!isValid || !currentProfile || !otherProfile || correctIndex === null) return
-
-        setSubmitError(null)
-
-        const { error } = await addQuestion({
+    const handleSubmit = async (data: QuestionFormData) => {
+        if (!currentProfile || !otherProfile) {
+            return { error: 'Waiting for your partner to join first' }
+        }
+        return addQuestion({
             authorId: currentProfile.id,
             visibleToId: otherProfile.id,
-            questionText: questionText.trim(),
-            choices: choices.map((c) => c.trim()),
-            correctAnswer: choices[correctIndex].trim(),
-            category: category.trim(),
-            difficulty,
+            questionText: data.questionText,
+            choices: data.choices,
+            correctAnswer: data.correctAnswer,
+            categoryId: data.categoryId,
+            difficulty: data.difficulty,
         })
-
-        if (error) {
-            setSubmitError(error)
-            return
-        }
-
-        setQuestionText('')
-        setChoices(EMPTY_CHOICES)
-        setCorrectIndex(null)
-        setCategory('')
-        setDifficulty('easy')
-        setJustAdded(true)
-        setTimeout(() => setJustAdded(false), 2000)
     }
 
     return (
-        <div className="flex min-h-screen flex-col gap-6 px-6 py-10">
-            <div>
-                <h1 className="text-2xl font-semibold">Add trivia</h1>
-                <p className="text-sm text-gray-500">
-                    Only {otherProfile?.name ?? 'the other person'} will see this question.
-                </p>
+        <div className="flex min-h-screen flex-col gap-6 px-4 py-8">
+            <div className="flex items-center gap-3">
+                <BackButton />
+                <div>
+                    <h1 className="font-display text-2xl text-ink">Add trivia</h1>
+                    <p className="text-sm text-ink-muted">
+                        Only <span className="font-medium text-ink">{otherProfile?.name ?? 'the other person'}</span> will see this question.
+                    </p>
+                </div>
             </div>
 
-            <Card>
-                <label className="text-sm text-gray-500">Question</label>
-                <textarea
-                    value={questionText}
-                    onChange={(e) => setQuestionText(e.target.value)}
-                    className="mt-1 w-full resize-none border-none p-0 text-lg outline-none"
-                    rows={2}
-                    placeholder="Where did we go on our first date?"
-                />
-            </Card>
+            <QuestionForm onSubmit={handleSubmit} submitLabel="Add question" submitLabelSuccess="Added!" />
 
-            <div className="flex flex-col gap-3">
-                <p className="text-sm text-gray-500">Choices, tap the correct one</p>
-                {choices.map((choice, index) => (
-                    <Card
-                        key={index}
-                        className={
-                            correctIndex === index
-                                ? 'flex items-center gap-3 border-green-500 bg-green-50'
-                                : 'flex items-center gap-3'
-                        }
-                    >
-                        <button
-                            type="button"
-                            onClick={() => setCorrectIndex(index)}
-                            className={
-                                correctIndex === index
-                                    ? 'h-5 w-5 shrink-0 rounded-full bg-green-500'
-                                    : 'h-5 w-5 shrink-0 rounded-full border border-gray-300'
-                            }
-                            aria-label={`Mark choice ${index + 1} as correct`}
-                        />
-                        <input
-                            value={choice}
-                            onChange={(e) => updateChoice(index, e.target.value)}
-                            placeholder={`Choice ${index + 1}`}
-                            className="w-full border-none p-0 outline-none"
-                        />
-                    </Card>
-                ))}
-            </div>
-
-            <Card className="flex items-center justify-between">
-                <label className="text-sm text-gray-500">Category</label>
-                <input
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    placeholder="first date"
-                    className="w-1/2 border-none p-0 text-right outline-none"
-                />
-            </Card>
-
-            <Card className="flex items-center justify-between">
-                <label className="text-sm text-gray-500">Difficulty</label>
-                <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as Question['difficulty'])}
-                    className="border-none bg-transparent p-0 text-right outline-none"
-                >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-            </Card>
-
-            {submitError && <p className="text-sm text-red-500">{submitError}</p>}
-
-            <button
-                onClick={handleSubmit}
-                disabled={!isValid}
-                className="rounded-2xl bg-gray-900 p-4 text-lg font-medium text-white disabled:bg-gray-300"
-            >
-                {justAdded ? 'Added!' : 'Add question'}
-            </button>
+            <Link href="/my-questions" className="flex items-center justify-center gap-0.5 text-sm font-medium text-marina">
+                View your questions
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
         </div>
     )
 }
