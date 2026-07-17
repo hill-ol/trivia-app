@@ -92,7 +92,7 @@ export default function CategoriesPage() {
                                         value={editValue}
                                         onChange={(e) => setEditValue(e.target.value)}
                                         autoFocus
-                                        className="flex-1 border-none bg-transparent p-0 text-ink outline-none"
+                                        className="min-w-0 flex-1 border-none bg-transparent p-0 text-ink outline-none"
                                     />
                                 ) : (
                                     <span className="flex-1 text-ink">{category.name}</span>
@@ -127,7 +127,7 @@ export default function CategoriesPage() {
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
                             placeholder="New category name"
-                            className="flex-1 border-none bg-transparent p-0 text-ink outline-none placeholder:text-wild-hillside"
+                            className="min-w-9 flex-1 border-none bg-transparent p-0 text-ink outline-none placeholder:text-wild-hillside"
                         />
                         <button onClick={handleCreate} aria-label="Add category" className="cursor-pointer text-marina">
                             <Plus className="h-5 w-5" />

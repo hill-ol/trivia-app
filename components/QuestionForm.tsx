@@ -231,8 +231,8 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
                     <label className="text-xs text-ink-muted">Category</label>
                     <Link href="/categories" className="flex items-center gap-0.5 text-xs font-medium text-marina">
                         Manage
+                        <ChevronRight className="h-3 w-3" aria-hidden="true" />
                     </Link>
-                    <ChevronRight className="h-3 w-3" aria-hidden="true" />
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {categories.map((cat) => (

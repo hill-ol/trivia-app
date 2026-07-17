@@ -11,7 +11,7 @@ const mockQuestions: Question[] = [
         questionText: 'Question 1',
         choices: ['A', 'B'],
         correctAnswer: 'A',
-        difficulty: 'easy',
+        points: 100,
         category: { id: 'c1', name: 'Test', color: 'blue' },
     },
     {
@@ -21,7 +21,7 @@ const mockQuestions: Question[] = [
         questionText: 'Question 2',
         choices: ['C', 'D'],
         correctAnswer: 'D',
-        difficulty: 'easy',
+        points: 100,
         category: { id: 'c1', name: 'Test', color: 'blue' },
     },
 ]
