@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, Target, History } from 'lucide-react'
+import { BarChart3, Target, History, Download, Loader2 } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getStatsForProfile } from '@/lib/gameSessions'
-import { useAsyncData } from '@/hooks/useAsyncData'
+import { useProfileStats } from '@/hooks/useProfileStats'
+import { exportAllData } from '@/lib/export'
+import { useIsMounted } from '@/hooks/useIsMounted'
 import { FLOAT_TRANSITION } from '@/lib/motion'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
@@ -33,11 +35,21 @@ function getPlayfulTitle(stats: { gamesPlayed: number; accuracy: number | null }
 }
 
 export default function ProfilePage() {
+    const isMounted = useIsMounted()
     const { currentProfile } = useProfile()
-    const { data: stats, error, isLoading, refetch } = useAsyncData(
-        () => (currentProfile ? getStatsForProfile(currentProfile.id) : Promise.resolve({ data: null, error: null })),
-        [currentProfile?.id]
-    )
+    const { data: stats, error, isLoading, refetch } = useProfileStats(currentProfile?.id)
+    const [isExporting, setIsExporting] = useState(false)
+    const [exportError, setExportError] = useState<string | null>(null)
+
+    const handleExport = async () => {
+        if (isExporting) return
+        setIsExporting(true)
+        setExportError(null)
+        const { error } = await exportAllData()
+        if (!isMounted()) return
+        setIsExporting(false)
+        if (error) setExportError(error)
+    }
 
     if (!currentProfile) return null
 
@@ -115,6 +127,16 @@ export default function ProfilePage() {
                     </StaggerItem>
                 </>
             )}
+
+            <button
+                onClick={handleExport}
+                disabled={isExporting}
+                className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-2xl border border-wild-hillside/40 bg-white p-4 text-sm font-medium text-ink-muted transition-transform active:scale-[0.98] disabled:cursor-not-allowed"
+            >
+                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {isExporting ? 'Exporting...' : 'Back up your data'}
+            </button>
+            {exportError && <p className="text-center text-xs text-briar-rose">{exportError}</p>}
         </div>
     )
 }
