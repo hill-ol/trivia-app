@@ -1,19 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import {ChevronRight, Plus, X} from 'lucide-react'
-import { getAllCategories, createCategory } from '@/lib/categories'
+import { ChevronRight, Plus, X, Loader2 } from 'lucide-react'
+import { createCategory } from '@/lib/categories'
+import { useCategories } from '@/hooks/useCategories'
 import { pointsChipColor, POINT_VALUES, PointValue } from '@/lib/points'
 import { CHOICE_TINTS } from '@/lib/choiceTints'
 import { getMissingFieldMessage } from '@/lib/questionValidation'
 import { playCorrectChime } from '@/lib/sound'
+import { useIsMounted } from '@/hooks/useIsMounted'
 import { Card } from '@/components/ui/Card'
 import { ChipButton } from '@/components/ui/Chip'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { Category, Question } from '@/types'
+import { Question } from '@/types'
 import { cn } from '@/lib/utils'
-import Link from "next/link";
 
 const MIN_CHOICES = 2
 const MAX_CHOICES = 4
@@ -44,11 +46,13 @@ interface QuestionFormProps {
 }
 
 export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess, onSubmit, onSuccess }: QuestionFormProps) {
-    const [categories, setCategories] = useState<Category[]>([])
+    const isMounted = useIsMounted()
+    const { data: categories } = useCategories()
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(initialQuestion?.category.id ?? null)
     const [newCategoryName, setNewCategoryName] = useState('')
     const [categoryError, setCategoryError] = useState<string | null>(null)
     const [showEmptyCategoryTooltip, setShowEmptyCategoryTooltip] = useState(false)
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false)
     const [questionText, setQuestionText] = useState(initialQuestion?.questionText ?? '')
     const [choices, setChoices] = useState<ChoiceItem[]>(() =>
         initialQuestion
@@ -60,27 +64,30 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
         return choices.find((c) => c.text === initialQuestion.correctAnswer)?.id ?? null
     })
     const [points, setPoints] = useState<PointValue>(initialQuestion?.points ?? 100)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [justSubmitted, setJustSubmitted] = useState(false)
     const [submitError, setSubmitError] = useState<string | null>(null)
     const [showMissingFieldTooltip, setShowMissingFieldTooltip] = useState(false)
 
-    useEffect(() => {
-        getAllCategories().then(({ data }) => setCategories(data))
-    }, [])
-
     const handleCreateCategory = async () => {
+        if (isCreatingCategory) return
+
         if (!newCategoryName.trim()) {
             setShowEmptyCategoryTooltip(true)
             setTimeout(() => setShowEmptyCategoryTooltip(false), 2000)
             return
         }
+
+        setIsCreatingCategory(true)
         const { category, error } = await createCategory(newCategoryName)
+        if (!isMounted()) return
+        setIsCreatingCategory(false)
+
         if (error) {
             setCategoryError(error)
             return
         }
         if (category) {
-            setCategories((prev) => [...prev, category])
             setSelectedCategoryId(category.id)
             setNewCategoryName('')
             setCategoryError(null)
@@ -108,6 +115,8 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
         selectedCategoryId !== null
 
     const handleSubmit = async () => {
+        if (isSubmitting) return
+
         if (!isValid || !correctId || !selectedCategoryId) {
             setShowMissingFieldTooltip(true)
             setTimeout(() => setShowMissingFieldTooltip(false), 2000)
@@ -117,6 +126,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
         const correctChoice = choices.find((c) => c.id === correctId)
         if (!correctChoice) return
 
+        setIsSubmitting(true)
         setSubmitError(null)
 
         const { error } = await onSubmit({
@@ -126,6 +136,9 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
             categoryId: selectedCategoryId,
             points,
         })
+
+        if (!isMounted()) return
+        setIsSubmitting(false)
 
         if (error) {
             setSubmitError(error)
@@ -192,7 +205,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
                                         value={choice.text}
                                         onChange={(e) => updateChoice(choice.id, e.target.value)}
                                         placeholder={`Choice ${index + 1}`}
-                                        className="w-full border-none bg-transparent p-0 text-ink outline-none placeholder:text-wild-hillside"
+                                        className="min-w-0 w-full border-none bg-transparent p-0 text-ink outline-none placeholder:text-wild-hillside"
                                     />
                                     {choices.length > MIN_CHOICES && (
                                         <button
@@ -235,7 +248,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
                     </Link>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {categories.map((cat) => (
+                    {categories?.map((cat) => (
                         <ChipButton
                             key={cat.id}
                             color={cat.color}
@@ -247,17 +260,24 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
                     ))}
                 </div>
                 <div className="flex items-center gap-2 border-t border-wild-hillside/30 pt-3">
-                    <div className="relative flex-1">
+                    <div className="relative min-w-0 flex-1">
                         <input
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
                             placeholder="New category"
-                            className="w-full border-none bg-transparent p-0 text-sm text-ink outline-none placeholder:text-wild-hillside"
+                            disabled={isCreatingCategory}
+                            className="w-full border-none bg-transparent p-0 text-sm text-ink outline-none placeholder:text-wild-hillside disabled:opacity-50"
                         />
                         <Tooltip show={showEmptyCategoryTooltip} message="Give it a name first!" className="bottom-full left-0 mb-2" />
                     </div>
-                    <button type="button" onClick={handleCreateCategory} aria-label="Add category" className="cursor-pointer text-marina">
-                        <Plus className="h-4 w-4" />
+                    <button
+                        type="button"
+                        onClick={handleCreateCategory}
+                        disabled={isCreatingCategory}
+                        aria-label="Add category"
+                        className="cursor-pointer text-marina disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     </button>
                 </div>
                 {categoryError && <p className="text-xs text-briar-rose">{categoryError}</p>}
@@ -279,14 +299,25 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
             <div className="relative">
                 <button
                     onClick={handleSubmit}
+                    disabled={isSubmitting}
                     className={cn(
-                        'w-full cursor-pointer rounded-2xl p-4 text-lg font-medium transition-all active:scale-[0.98]',
-                        !isValid && 'bg-wild-hillside/40 text-ink-muted',
-                        isValid && !justSubmitted && 'bg-marina text-white',
-                        justSubmitted && 'animate-pop bg-bowser-shell text-white'
+                        'w-full cursor-pointer rounded-2xl p-4 text-lg font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed',
+                        isSubmitting && 'bg-marina/60 text-white',
+                        !isSubmitting && justSubmitted && 'animate-pop bg-bowser-shell text-white',
+                        !isSubmitting && !justSubmitted && isValid && 'bg-marina text-white',
+                        !isSubmitting && !justSubmitted && !isValid && 'bg-wild-hillside/40 text-ink-muted'
                     )}
                 >
-                    {justSubmitted ? submitLabelSuccess : submitLabel}
+                    {isSubmitting ? (
+                        <span className="flex items-center justify-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Adding...
+            </span>
+                    ) : justSubmitted ? (
+                        submitLabelSuccess
+                    ) : (
+                        submitLabel
+                    )}
                 </button>
                 <Tooltip
                     show={showMissingFieldTooltip}

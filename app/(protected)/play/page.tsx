@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Star } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getPlayData } from '@/lib/questions'
 import { recordAttempt } from '@/lib/questionAttempts'
 import { recordSession } from '@/lib/gameSessions'
-import { useAsyncData } from '@/hooks/useAsyncData'
+import { playCorrectChime } from '@/lib/sound'
+import { usePlayData } from '@/hooks/usePlayData'
 import { usePlaySession } from '@/hooks/usePlaySession'
 import { filterQuestions, getEmptyStateMessage, PlayMode } from '@/lib/playFilters'
 import { pointsChipColor } from '@/lib/points'
@@ -20,17 +20,10 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { ErrorNotice } from '@/components/ui/ErrorNotice'
 import { Question } from '@/types'
 import { cn } from '@/lib/utils'
-import {playCorrectChime} from "@/lib/sound";
 
 export default function PlayPage() {
     const { currentProfile } = useProfile()
-    const { data: playData, error, isLoading, refetch } = useAsyncData(
-        () =>
-            currentProfile
-                ? getPlayData(currentProfile.id)
-                : Promise.resolve({ data: { questions: [], answeredIds: new Set<string>() }, error: null }),
-        [currentProfile?.id]
-    )
+    const { data: playData, error, isLoading, refetch } = usePlayData(currentProfile?.id)
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
     const [mode, setMode] = useState<PlayMode>('new')
     const [showEmptyTooltip, setShowEmptyTooltip] = useState(false)
@@ -221,10 +214,10 @@ function PlaySession({ profileId, questions, onExit }: { profileId: string; ques
             <div className="flex flex-col gap-3">
                 {currentQuestion?.choices.map((choice, i) => {
                     const isCorrectChoice = choice === currentQuestion.correctAnswer
-                    const tint = CHOICE_TINTS[i % CHOICE_TINTS.length]
 
                     if (state.status === 'answered') {
                         const isSelected = state.selectedAnswer === choice
+                        const tint = CHOICE_TINTS[i % CHOICE_TINTS.length]
                         return (
                             <Card
                                 key={choice}
@@ -244,7 +237,7 @@ function PlaySession({ profileId, questions, onExit }: { profileId: string; ques
                         <Card
                             key={choice}
                             onClick={() => submitAnswer(choice)}
-                            className={cn(tint, 'cursor-pointer active:scale-[0.98] transition-transform')}
+                            className={cn(CHOICE_TINTS[i % CHOICE_TINTS.length], 'cursor-pointer active:scale-[0.98] transition-transform')}
                         >
                             {choice}
                         </Card>
