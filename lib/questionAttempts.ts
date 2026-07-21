@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import {Category, Profile, Question} from '@/types'
+import {mutate} from "swr";
 
 interface AttemptRow {
     id: string
@@ -25,6 +26,9 @@ export async function recordAttempt(
         console.error('Failed to record attempt:', error.message)
         return { error: error.message }
     }
+    void mutate((key) => Array.isArray(key) && key[0] === 'play-data').catch((err) =>
+        console.error('Failed to revalidate play data cache:', err)
+    )
     return { error: null }
 }
 

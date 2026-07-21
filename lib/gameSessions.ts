@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { GameSession, Profile } from '@/types'
+import {cacheKeys} from "@/lib/cacheKeys";
+import {mutate} from "swr";
 
 interface GameSessionRow {
     id: string
@@ -33,6 +35,10 @@ export async function recordSession(
         console.error('Failed to record session:', error.message)
         return { error: error.message }
     }
+    void mutate((key) => Array.isArray(key) && key[0] === 'stats').catch((err) =>
+        console.error('Failed to revalidate stats cache:', err)
+    )
+    void mutate(cacheKeys.leaderboard).catch((err) => console.error('Failed to revalidate leaderboard cache:', err))
     return { error: null }
 }
 

@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { Category } from '@/types'
+import { cacheKeys } from "@/lib/cacheKeys";
+import { mutate } from "swr";
 
 const COLOR_ROTATION: Category['color'][] = ['blue', 'lavender', 'green', 'rose']
 
@@ -28,6 +30,7 @@ export async function createCategory(
         const message = error.code === '23505' ? 'That category already exists' : error.message
         return { category: null, error: message }
     }
+    void mutate(cacheKeys.categories).catch((err) => console.error('Failed to revalidate categories cache:', err))
     return { category: data as Category, error: null }
 }
 
@@ -37,6 +40,7 @@ export async function renameCategory(id: string, name: string): Promise<{ error:
         const message = error.code === '23505' ? 'That name is already used by another category' : error.message
         return { error: message }
     }
+    void mutate(cacheKeys.categories).catch((err) => console.error('Failed to revalidate categories cache:', err))
     return { error: null }
 }
 
@@ -49,5 +53,6 @@ export async function deleteCategory(id: string): Promise<{ error: string | null
                 : error.message
         return { error: message }
     }
+    void mutate(cacheKeys.categories).catch((err) => console.error('Failed to revalidate categories cache:', err))
     return { error: null }
 }

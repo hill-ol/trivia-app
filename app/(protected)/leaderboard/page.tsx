@@ -2,44 +2,22 @@
 
 import { motion } from 'framer-motion'
 import { Crown } from 'lucide-react'
-import { getAllProfiles } from '@/lib/profiles'
-import { getStatsForProfile, ProfileStats } from '@/lib/gameSessions'
-import { useAsyncData } from '@/hooks/useAsyncData'
+import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { FLOAT_TRANSITION } from '@/lib/motion'
 import { Card } from '@/components/ui/Card'
 import { BackButton } from '@/components/ui/BackButton'
 import { StaggerItem } from '@/components/ui/StaggerItem'
 import { ErrorNotice } from '@/components/ui/ErrorNotice'
 import { WobbleStar } from '@/components/ui/WobbleStar'
-import { Profile } from '@/types'
 import { cn } from '@/lib/utils'
-
-interface Row {
-    profile: Profile
-    stats: ProfileStats
-}
 
 const ROW_ACCENTS = [
     { avatarBg: 'bg-marina/10 text-marina' },
     { avatarBg: 'bg-petal-plush/15 text-petal-plush-deep' },
 ]
 
-async function loadLeaderboardRows(): Promise<{ data: Row[]; error: string | null }> {
-    const { data: profiles, error } = await getAllProfiles()
-    if (error) return { data: [], error }
-
-    const rows = await Promise.all(
-        profiles.map(async (profile) => {
-            const { data: stats } = await getStatsForProfile(profile.id)
-            return { profile, stats }
-        })
-    )
-    rows.sort((a, b) => b.stats.totalCorrect - a.stats.totalCorrect)
-    return { data: rows, error: null }
-}
-
 export default function LeaderboardPage() {
-    const { data: rows, error, isLoading, refetch } = useAsyncData(loadLeaderboardRows, [])
+    const { data: rows, error, isLoading, refetch } = useLeaderboard()
 
     const isTied = rows && rows.length > 1 && rows[0].stats.totalCorrect === rows[1].stats.totalCorrect
     const hasLeader = rows && rows.length > 0 && rows[0].stats.totalCorrect > 0 && !isTied
