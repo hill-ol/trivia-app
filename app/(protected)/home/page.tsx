@@ -1,10 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import {BarChart3, Target, Play, Plus, Trophy, User, Grid3x3} from 'lucide-react'
+import { BarChart3, Target, Play, Plus, Trophy, User, Grid3x3 } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
-import { getStatsForProfile } from '@/lib/gameSessions'
-import { useAsyncData } from '@/hooks/useAsyncData'
+import { useProfileStats } from '@/hooks/useProfileStats'
 import { FLOAT_TRANSITION } from '@/lib/motion'
 import { StatCard } from '@/components/ui/StatCard'
 import { NavRow } from '@/components/ui/NavRow'
@@ -15,13 +14,7 @@ import { Squiggle } from '@/components/ui/Squiggle'
 
 export default function HomePage() {
     const { currentProfile } = useProfile()
-    const { data: stats, error, isLoading, refetch } = useAsyncData(
-        () =>
-            currentProfile
-                ? getStatsForProfile(currentProfile.id)
-                : Promise.resolve({ data: null, error: null }),
-        [currentProfile?.id]
-    )
+    const { data: stats, error, isLoading, refetch } = useProfileStats(currentProfile?.id)
 
     if (!currentProfile) return null
 
