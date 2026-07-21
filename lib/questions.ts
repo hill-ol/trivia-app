@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { Question, Profile } from '@/types'
 import {getAnsweredQuestionIds} from "@/lib/questionAttempts";
+import { mutate } from 'swr'
 
 interface QuestionRow {
     id: string
@@ -88,6 +89,9 @@ export async function addQuestion(
         console.error('Failed to add question:', error.message)
         return { error: error.message }
     }
+    void mutate((key) => Array.isArray(key) && (key[0] === 'play-data' || key[0] === 'my-questions')).catch((err) =>
+        console.error('Failed to revalidate question caches:', err)
+    )
     return { error: null }
 }
 
@@ -109,6 +113,9 @@ export async function updateQuestion(
         console.error('Failed to update question:', error.message)
         return { error: error.message }
     }
+    void mutate((key) => Array.isArray(key) && (key[0] === 'play-data' || key[0] === 'my-questions')).catch((err) =>
+        console.error('Failed to revalidate question caches:', err)
+    )
     return { error: null }
 }
 
@@ -118,6 +125,9 @@ export async function deleteQuestion(id: string): Promise<{ error: string | null
         console.error('Failed to delete question:', error.message)
         return { error: error.message }
     }
+    void mutate((key) => Array.isArray(key) && (key[0] === 'play-data' || key[0] === 'my-questions')).catch((err) =>
+        console.error('Failed to revalidate question caches:', err)
+    )
     return { error: null }
 }
 
