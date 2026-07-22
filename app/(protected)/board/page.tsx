@@ -150,7 +150,14 @@ export default function BoardPage() {
                                                                 >
                                                                     {isEmpty ? '—' : cell.points}
                                                                     {isAnswered && (
-                                                                        <Check className="absolute -right-1.5 -top-1.5 h-4 w-4 rounded-full bg-bowser-shell p-0.5 text-white" />
+                                                                        <motion.div
+                                                                            initial={{ scale: 0.5, opacity: 0 }}
+                                                                            animate={{ scale: 1, opacity: 1 }}
+                                                                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                                                                            className="absolute -right-1.5 -top-2"
+                                                                        >
+                                                                            <Check className="h-4 w-4 rounded-full bg-bowser-shell p-0.5 text-white" />
+                                                                        </motion.div>
                                                                     )}
                                                                 </button>
                                                             )

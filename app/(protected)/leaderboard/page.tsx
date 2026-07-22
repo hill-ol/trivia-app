@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Crown } from 'lucide-react'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { FLOAT_TRANSITION } from '@/lib/motion'
@@ -18,6 +18,7 @@ const ROW_ACCENTS = [
 
 export default function LeaderboardPage() {
     const { data: rows, error, isLoading, refetch } = useLeaderboard()
+    const shouldReduceMotion = useReducedMotion()
 
     const isTied = rows && rows.length > 1 && rows[0].stats.totalCorrect === rows[1].stats.totalCorrect
     const hasLeader = rows && rows.length > 0 && rows[0].stats.totalCorrect > 0 && !isTied
@@ -62,8 +63,8 @@ export default function LeaderboardPage() {
                                                 <motion.div
                                                     className="absolute -right-1.5 -top-2"
                                                     initial={{ rotate: 15 }}
-                                                    animate={{ rotate: 15, y: [0, -3, 0] }}
-                                                    transition={FLOAT_TRANSITION}
+                                                    animate={{ rotate: 15, y: shouldReduceMotion ? 0 : [0, -3, 0] }}
+                                                    transition={shouldReduceMotion ? { duration: 0 } : FLOAT_TRANSITION}
                                                     aria-hidden="true"
                                                 >
                                                     <Crown className="h-5 w-5 text-changeling" fill="currentColor" />

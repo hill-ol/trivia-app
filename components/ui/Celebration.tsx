@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Star } from 'lucide-react'
 
 const PARTICLES = [
@@ -13,6 +13,7 @@ const PARTICLES = [
 ]
 
 export function Celebration() {
+    const shouldReduceMotion = useReducedMotion()
     return (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
             {PARTICLES.map((p, i) => (
@@ -20,7 +21,11 @@ export function Celebration() {
                     key={i}
                     className={`absolute ${p.color}`}
                     initial={{ opacity: 0, x: 0, y: 0, scale: 0.5, rotate: 0 }}
-                    animate={{ opacity: [0, 1, 0], x: p.x, y: p.y, scale: 1, rotate: p.rotate }}
+                    animate={
+                        shouldReduceMotion
+                            ? { opacity: [0, 1, 0], scale: 1 }
+                            : { opacity: [0, 1, 0], x: p.x, y: p.y, scale: 1, rotate: p.rotate }
+                    }
                     transition={{ duration: 1, delay: 0.15 + i * 0.04, ease: 'easeOut' }}
                 >
                     <Star className="h-4 w-4" fill="currentColor" />

@@ -1,4 +1,8 @@
+'use client'
+
+import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/Card'
+import { CountUp } from '@/components/ui/CountUp'
 import { cn } from '@/lib/utils'
 import { ReactNode } from 'react'
 
@@ -24,7 +28,15 @@ export function StatCard({ icon, label, value, color = 'blue', sticker }: StatCa
                 {icon}
             </div>
             <p className="text-xs text-ink-muted">{label}</p>
-            <p className="text-2xl font-medium text-ink">{value}</p>
+            <motion.p
+                key={String(value)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="text-2xl font-medium text-ink"
+            >
+                {typeof value === 'number' ? <CountUp value={value} /> : value}
+            </motion.p>
         </Card>
     )
 }

@@ -47,7 +47,7 @@ export function NavRow({ href, icon, label, color = 'blue' }: NavRowProps) {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             className={cn(
-                'flex min-h-[44px] items-center gap-3 rounded-2xl border border-wild-hillside/40 bg-white p-4 transition-all duration-200 active:scale-[0.98]',
+                'flex min-h-[44px] items-center gap-3 rounded-2xl border border-wild-hillside/40 bg-white p-4 transition-colors transition-transform duration-200 active:scale-[0.98]',
                 accent.hoverBg,
                 accent.hoverBorder,
                 'hover:shadow-md',

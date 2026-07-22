@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Star } from 'lucide-react'
 
 interface Sparkle {
@@ -13,9 +13,12 @@ interface Sparkle {
 let nextId = 0
 
 export function TapSparkles() {
+    const shouldReduceMotion = useReducedMotion()
     const [sparkles, setSparkles] = useState<Sparkle[]>([])
 
     useEffect(() => {
+        if (shouldReduceMotion) return
+
         function handleClick(e: MouseEvent) {
             const target = e.target as HTMLElement
             if (!target.closest('button, a, .cursor-pointer')) return
@@ -29,7 +32,7 @@ export function TapSparkles() {
 
         document.addEventListener('click', handleClick)
         return () => document.removeEventListener('click', handleClick)
-    }, [])
+    }, [shouldReduceMotion])
 
     return (
         <div className="pointer-events-none fixed inset-0 z-50" aria-hidden="true">

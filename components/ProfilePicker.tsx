@@ -74,7 +74,7 @@ export function ProfilePicker() {
                                 onClick={() => handleSelect(name)}
                                 disabled={pendingName !== null}
                                 className={cn(
-                                    'relative flex min-h-[44px] w-full items-center gap-4 rounded-2xl border border-wild-hillside/40 bg-white p-4 text-left transition-all duration-300 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
+                                    'relative flex min-h-[44px] w-full items-center gap-4 rounded-2xl border border-wild-hillside/40 bg-white p-4 text-left transition-colors transition-transform duration-300 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
                                     'group-hover:shadow-lg',
                                     accent.hoverBg,
                                     accent.hoverBorder,

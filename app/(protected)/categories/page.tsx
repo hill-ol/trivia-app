@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Trash2, Check, X, Plus, Loader2 } from 'lucide-react'
 import { renameCategory, deleteCategory, createCategory } from '@/lib/categories'
 import { useCategories } from '@/hooks/useCategories'
@@ -99,8 +100,17 @@ export default function CategoriesPage() {
                 <div className="flex flex-col gap-3">
                     {isLoading && <p className="text-sm text-ink-muted">Loading...</p>}
 
+                    <AnimatePresence initial={false} mode="popLayout">
                     {categories?.map((category) => (
-                        <Card key={category.id}>
+                        <motion.div
+                            key={category.id}
+                            layout
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: 24 }}
+                            transition={{ layout: { duration: 0.25, ease: 'easeOut' }, opacity: { duration: 0.2 }, x: { duration: 0.2 } }}
+                        >
+                        <Card>
                             <div className="flex items-center gap-3">
                                 <span className={cn('h-3 w-3 shrink-0 rounded-full', DOT_COLOR[category.color])} aria-hidden="true" />
                                 {editingId === category.id ? (
@@ -115,8 +125,9 @@ export default function CategoriesPage() {
                                     <span className="min-w-0 flex-1 truncate text-ink">{category.name}</span>
                                 )}
 
+                                <AnimatePresence mode="wait" initial={false}>
                                 {editingId === category.id ? (
-                                    <>
+                                    <motion.div key="editing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15, ease: 'easeOut' }} className="flex items-center gap-2">
                                         <button
                                             onClick={saveEdit}
                                             disabled={isSaving}
@@ -133,9 +144,9 @@ export default function CategoriesPage() {
                                         >
                                             <X className="h-4 w-4" />
                                         </button>
-                                    </>
+                                    </motion.div>
                                 ) : confirmingId === category.id ? (
-                                    <div className="flex items-center gap-2 text-xs">
+                                    <motion.div key="confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15, ease: 'easeOut' }} className="flex items-center gap-2 text-xs">
                                         <span className="text-briar-rose">Delete?</span>
                                         <button
                                             onClick={() => handleDelete(category)}
@@ -151,9 +162,9 @@ export default function CategoriesPage() {
                                         >
                                             Cancel
                                         </button>
-                                    </div>
+                                    </motion.div>
                                 ) : (
-                                    <>
+                                    <motion.div key="default" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15, ease: 'easeOut' }} className="flex items-center gap-2">
                                         <button
                                             onClick={() => startEditing(category)}
                                             disabled={deletingId !== null}
@@ -170,12 +181,15 @@ export default function CategoriesPage() {
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
-                                    </>
+                                    </motion.div>
                                 )}
+                                </AnimatePresence>
                             </div>
                             {rowError?.id === category.id && <p className="mt-2 text-xs text-briar-rose">{rowError.message}</p>}
                         </Card>
+                        </motion.div>
                     ))}
+                    </AnimatePresence>
 
                     <Card className="flex items-center gap-3">
                         <input

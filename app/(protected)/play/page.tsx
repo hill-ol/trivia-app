@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Star } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
 import { recordAttempt } from '@/lib/questionAttempts'
@@ -124,7 +125,7 @@ export default function PlayPage() {
                 <button
                     onClick={handleStart}
                     className={cn(
-                        'w-full cursor-pointer rounded-2xl p-4 text-lg font-medium transition-all active:scale-[0.98]',
+                        'w-full cursor-pointer rounded-2xl p-4 text-lg font-medium transition-colors transition-transform active:scale-[0.98]',
                         matchingQuestions.length > 0 ? 'bg-marina text-white' : 'bg-wild-hillside/40 text-ink-muted'
                     )}
                 >
@@ -190,14 +191,21 @@ function PlaySession({ profileId, questions, onExit }: { profileId: string; ques
             <BackButton />
 
             <div className="flex justify-center gap-1.5">
-                {questions.map((_, i) => (
-                    <Star
-                        key={i}
-                        className={i <= currentIndex ? 'h-4 w-4 text-changeling' : 'h-4 w-4 text-wild-hillside'}
-                        fill={i <= currentIndex ? 'currentColor' : 'none'}
-                        aria-hidden="true"
-                    />
-                ))}
+                {questions.map((_, i) => {
+                    const isFilled = i <= currentIndex
+                    return isFilled ? (
+                        <motion.div
+                            key={`${i}-filled`}
+                            initial={{ scale: 1.25 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.3, ease: 'easeOut' }}
+                        >
+                            <Star className="h-4 w-4 text-changeling" fill="currentColor" aria-hidden="true" />
+                        </motion.div>
+                    ) : (
+                        <Star key={`${i}-empty`} className="h-4 w-4 text-wild-hillside" fill="none" aria-hidden="true" />
+                    )
+                })}
             </div>
 
             <div className="flex gap-2">

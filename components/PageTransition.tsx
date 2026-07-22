@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
 const VARIANTS = {
@@ -16,6 +16,12 @@ const VARIANTS = {
     },
 }
 
+const REDUCED_VARIANT = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+}
+
 function getVariant(pathname: string) {
     if (pathname.startsWith("/categories") || pathname.includes('/edit')) return VARIANTS.push
     return VARIANTS.default
@@ -23,7 +29,8 @@ function getVariant(pathname: string) {
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const variant = getVariant(pathname)
+    const shouldReduceMotion = useReducedMotion()
+    const variant = shouldReduceMotion ? REDUCED_VARIANT : getVariant(pathname)
 
     return (
         <AnimatePresence mode="wait" initial={false}>

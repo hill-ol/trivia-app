@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { BarChart3, Target, Play, Plus, Trophy, User, Grid3x3 } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
 import { useProfileStats } from '@/hooks/useProfileStats'
@@ -15,6 +15,7 @@ import { Squiggle } from '@/components/ui/Squiggle'
 export default function HomePage() {
     const { currentProfile } = useProfile()
     const { data: stats, error, isLoading, refetch } = useProfileStats(currentProfile?.id)
+    const shouldReduceMotion = useReducedMotion()
 
     if (!currentProfile) return null
 
@@ -24,8 +25,8 @@ export default function HomePage() {
                 <motion.div
                     className="absolute -right-2 -top-2 h-[68px] w-[68px] rounded-2xl bg-petal-plush"
                     initial={{ rotate: 10 }}
-                    animate={{ rotate: 10, y: [0, -4, 0] }}
-                    transition={FLOAT_TRANSITION}
+                    animate={{ rotate: 10, y: shouldReduceMotion ? 0 : [0, -4, 0] }}
+                    transition={shouldReduceMotion ? { duration: 0 } : FLOAT_TRANSITION}
                     aria-hidden="true"
                 />
                 <div className="relative rounded-2xl border border-wild-hillside/40 bg-white p-4">

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { FLOAT_TRANSITION } from '@/lib/motion'
 import { HTMLAttributes } from 'react'
@@ -19,6 +19,7 @@ const stickerColorMap: Record<StickerColor, string> = {
 }
 
 export function Card({ className, children, sticker, rotate = 6, ...props }: CardProps) {
+    const shouldReduceMotion = useReducedMotion()
     const cardEl = (
         <div
             className={cn('relative rounded-2xl border border-wild-hillside/40 bg-white p-4', className)}
@@ -35,8 +36,8 @@ export function Card({ className, children, sticker, rotate = 6, ...props }: Car
             <motion.div
                 className={cn('absolute inset-0 rounded-2xl', stickerColorMap[sticker])}
                 initial={{ rotate }}
-                animate={{ rotate, y: [0, -3, 0] }}
-                transition={FLOAT_TRANSITION}
+                animate={{ rotate, y: shouldReduceMotion ? 0 : [0, -3, 0] }}
+                transition={shouldReduceMotion ? { duration: 0 } : FLOAT_TRANSITION}
                 aria-hidden="true"
             />
             {cardEl}

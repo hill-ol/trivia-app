@@ -301,7 +301,7 @@ export function QuestionForm({ initialQuestion, submitLabel, submitLabelSuccess,
                     onClick={handleSubmit}
                     disabled={isSubmitting}
                     className={cn(
-                        'w-full cursor-pointer rounded-2xl p-4 text-lg font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed',
+                        'w-full cursor-pointer rounded-2xl p-4 text-lg font-medium transition-colors transition-transform active:scale-[0.98] disabled:cursor-not-allowed',
                         isSubmitting && 'bg-marina/60 text-white',
                         !isSubmitting && justSubmitted && 'animate-pop bg-bowser-shell text-white',
                         !isSubmitting && !justSubmitted && isValid && 'bg-marina text-white',

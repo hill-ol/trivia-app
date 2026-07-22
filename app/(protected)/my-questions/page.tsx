@@ -80,8 +80,9 @@ export default function MyQuestionsPage() {
                                                 >
                                                     <Pencil className="h-4 w-4" />
                                                 </Link>
+                                                <AnimatePresence mode="wait" initial={false}>
                                                 {confirmingId === question.id ? (
-                                                    <div className="flex items-center gap-2 text-xs">
+                                                    <motion.div key="confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15, ease: 'easeOut' }} className="flex items-center gap-2 text-xs">
                                                         <span className="text-briar-rose">Delete?</span>
                                                         <button
                                                             onClick={() => handleDelete(question.id)}
@@ -97,16 +98,22 @@ export default function MyQuestionsPage() {
                                                         >
                                                             Cancel
                                                         </button>
-                                                    </div>
+                                                    </motion.div>
                                                 ) : (
-                                                    <button
+                                                    <motion.button
+                                                        key="trigger"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.15, ease: 'easeOut' }}
                                                         onClick={() => setConfirmingId(question.id)}
                                                         aria-label="Delete question"
                                                         className="cursor-pointer text-ink-muted transition-colors hover:text-briar-rose"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
-                                                    </button>
+                                                    </motion.button>
                                                 )}
+                                                </AnimatePresence>
                                             </div>
                                         </div>
                                         {deleteError?.id === question.id && <p className="text-xs text-briar-rose">{deleteError.message}</p>}

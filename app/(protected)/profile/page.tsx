@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { BarChart3, Target, History, Download, Loader2 } from 'lucide-react'
 import { useProfile } from '@/contexts/ProfileContext'
 import { useProfileStats } from '@/hooks/useProfileStats'
@@ -38,6 +38,7 @@ export default function ProfilePage() {
     const isMounted = useIsMounted()
     const { currentProfile } = useProfile()
     const { data: stats, error, isLoading, refetch } = useProfileStats(currentProfile?.id)
+    const shouldReduceMotion = useReducedMotion()
     const [isExporting, setIsExporting] = useState(false)
     const [exportError, setExportError] = useState<string | null>(null)
 
@@ -63,8 +64,8 @@ export default function ProfilePage() {
                 <motion.div
                     className="absolute -right-2 -top-2 h-[68px] w-[68px] rounded-2xl bg-petal-plush"
                     initial={{ rotate: 10 }}
-                    animate={{ rotate: 10, y: [0, -4, 0] }}
-                    transition={FLOAT_TRANSITION}
+                    animate={{ rotate: 10, y: shouldReduceMotion ? 0 : [0, -4, 0] }}
+                    transition={shouldReduceMotion ? { duration: 0 } : FLOAT_TRANSITION}
                     aria-hidden="true"
                 />
                 <FlowerDoodle className="absolute -bottom-3 -left-3 h-12 w-12 -rotate-[8deg] text-changeling/80" />
